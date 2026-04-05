@@ -527,7 +527,7 @@
                 attempts++;
             } while (attempts < 50);
 
-            items.forEach(it => it.size = 35 + (it.w * 3.5));
+            items.forEach(it => it.size = 25 + (it.w * 12));
             clearSelection(); calculateOptimal(); updateUI(); populateLab();
         }
 
