@@ -389,9 +389,38 @@
         }
 
         function shuffleValues() {
-            items = Array.from({length: itemCount}, (_, i) => ({
-                ...types[i % types.length], v: Math.floor(Math.random()*30)+20, w: Math.floor(Math.random()*5)+2
-            }));
+            // Generate items that create interesting knapsack puzzles:
+            // - Total weight always exceeds capacity (can't take everything)
+            // - Mix of tempting heavy items and efficient light ones
+            // - Varied value/weight ratios so greedy != optimal
+            const archetypes = [
+                {wMin:1, wMax:2, vMin:8, vMax:18},   // light bargain
+                {wMin:2, wMax:4, vMin:15, vMax:30},   // medium balanced
+                {wMin:3, wMax:5, vMin:20, vMax:45},   // heavy valuable
+                {wMin:1, wMax:3, vMin:5, vMax:12},    // light junk (trap)
+                {wMin:4, wMax:6, vMin:35, vMax:50},   // very heavy treasure
+            ];
+
+            let attempts = 0;
+            do {
+                items = Array.from({length: itemCount}, (_, i) => {
+                    const arch = archetypes[i % archetypes.length];
+                    const w = arch.wMin + Math.floor(Math.random() * (arch.wMax - arch.wMin + 1));
+                    const v = arch.vMin + Math.floor(Math.random() * (arch.vMax - arch.vMin + 1));
+                    return { ...types[i % types.length], v, w };
+                });
+                // Shuffle item order so archetypes aren't always in the same position
+                for (let i = items.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [items[i], items[j]] = [items[j], items[i]];
+                }
+                const totalW = items.reduce((s, it) => s + it.w, 0);
+                // Ensure total weight exceeds capacity by at least 30% (real tradeoffs)
+                // and optimal picks roughly 40-80% of items (not trivial)
+                if (totalW >= capacity * 1.3 && totalW <= capacity * 3) break;
+                attempts++;
+            } while (attempts < 50);
+
             items.forEach(it => it.size = 35 + (it.w * 3.5));
             clearSelection(); calculateOptimal(); updateUI(); populateLab();
         }
@@ -411,7 +440,7 @@
         function populateLab() {
             const labList = document.getElementById('labItemList');
             labList.innerHTML = items.map(it =>
-                `<div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/40 flex justify-between items-center"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">$${it.v} | ${it.w}kg</p></div></div></div>`
+                `<div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/40 flex justify-between items-center"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">${it.w}kg</p></div></div><span class="text-base font-mono font-extrabold text-yellow-400">$${it.v}</span></div>`
             ).join('');
 
             const table = document.getElementById('dpTable');
@@ -446,7 +475,7 @@
                 const i = items.length - idx;
                 const pick = dpMatrix[i][backtrackW] !== dpMatrix[i-1][backtrackW];
                 if(pick) backtrackW -= it.w;
-                return `<div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 transition-all ${pick ? 'ring-1 ring-emerald-500' : ''}"><div class="flex justify-between items-center mb-4"><div class="w-12 h-12 rounded-xl ${it.c} flex items-center justify-center">${it.i}</div><span class="${pick ? 'text-emerald-400' : 'text-slate-600'} text-[10px] font-black uppercase">${pick ? i18n[currentLang].picked : i18n[currentLang].skipped}</span></div><p class="text-sm font-bold text-white mb-1">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">${it.w}kg | $${it.v}</p></div>`;
+                return `<div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 transition-all ${pick ? 'ring-1 ring-emerald-500' : ''}"><div class="flex justify-between items-center mb-4"><div class="w-12 h-12 rounded-xl ${it.c} flex items-center justify-center">${it.i}</div><span class="${pick ? 'text-emerald-400' : 'text-slate-600'} text-[10px] font-black uppercase">${pick ? i18n[currentLang].picked : i18n[currentLang].skipped}</span></div><p class="text-sm font-bold text-white mb-1">${it[currentLang]}</p><div class="flex items-center justify-between mt-1"><span class="text-[10px] font-mono text-slate-500">${it.w}kg</span><span class="text-base font-mono font-extrabold ${pick ? 'text-emerald-400' : 'text-yellow-400/40'}">$${it.v}</span></div></div>`;
             }).reverse().join('');
         }
 
@@ -500,11 +529,11 @@
                 const card = document.createElement('div');
                 card.className = `item-card glass-panel p-3 flex justify-between items-center ${sel ? 'item-selected border-blue-500/50' : 'border-slate-800'} ${isLocked ? 'item-locked' : 'hover:bg-white/5'}`;
                 card.onclick = () => !isLocked && toggle(i);
-                card.innerHTML = `<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">${it.w}kg | $${it.v}</p></div></div>` + (sel ? '✓' : '');
+                card.innerHTML = `<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">${it.w}kg</p></div></div><div class="flex items-center gap-2"><span class="text-sm font-mono font-extrabold text-yellow-400">$${it.v}</span>${sel ? '<span class="text-blue-400">✓</span>' : ''}</div>`;
                 grid.appendChild(card);
                 if(sel) {
                     const t = document.createElement('div'); t.className = "flex justify-between items-center text-slate-400 py-1.5 border-b border-slate-800/50 text-[10px]";
-                    t.innerHTML = `<div class="flex items-center gap-2"><div class="w-4 h-4">${it.i}</div><span>${it[currentLang]}</span></div><span class="font-mono text-yellow-500">$${it.v}</span>`;
+                    t.innerHTML = `<div class="flex items-center gap-2"><div class="w-4 h-4">${it.i}</div><span>${it[currentLang]}</span></div><span class="font-mono font-bold text-yellow-400 text-sm">$${it.v}</span>`;
                     trace.appendChild(t);
                 }
             });
