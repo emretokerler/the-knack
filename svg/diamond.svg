@@ -1,0 +1,18 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Diamond body -->
+  <path d="M12 22L22 8H42L52 22L32 56L12 22Z" fill="#22D3EE"/>
+  <!-- Top facets -->
+  <path d="M22 8L27 22H12L22 8Z" fill="#67E8F9"/>
+  <path d="M22 8H42L37 22H27L22 8Z" fill="#A5F3FC"/>
+  <path d="M42 8L52 22H37L42 8Z" fill="#67E8F9"/>
+  <!-- Bottom facets -->
+  <path d="M12 22H27L32 56L12 22Z" fill="#06B6D4"/>
+  <path d="M27 22H37L32 56L27 22Z" fill="#0891B2"/>
+  <path d="M37 22H52L32 56L37 22Z" fill="#06B6D4"/>
+  <!-- Sparkle highlights -->
+  <path d="M27 22L32 14L37 22" fill="white" opacity="0.3"/>
+  <circle cx="24" cy="18" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="40" cy="16" r="1" fill="white" opacity="0.4"/>
+  <!-- Outline -->
+  <path d="M12 22L22 8H42L52 22L32 56L12 22Z" stroke="#0E7490" stroke-width="1.5"/>
+</svg>

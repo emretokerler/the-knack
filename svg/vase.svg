@@ -1,0 +1,17 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Vase body -->
+  <path d="M22 12L18 8H46L42 12C44 16 48 22 48 30C48 36 44 40 38 42L36 44V52H28V44L26 42C20 40 16 36 16 30C16 22 20 16 22 12Z" fill="#3B82F6"/>
+  <!-- Porcelain highlight -->
+  <path d="M24 14C24 14 22 20 22 28C22 34 26 38 30 40" stroke="#93C5FD" stroke-width="2" opacity="0.5" fill="none" stroke-linecap="round"/>
+  <!-- Decorative band -->
+  <rect x="18" y="24" width="28" height="3" rx="1" fill="#1D4ED8" opacity="0.5"/>
+  <rect x="20" y="32" width="24" height="2" rx="1" fill="#1D4ED8" opacity="0.3"/>
+  <!-- Dragon/floral motif -->
+  <path d="M28 26C30 24 34 24 36 26C34 28 30 28 28 26Z" fill="#DBEAFE" opacity="0.4"/>
+  <!-- Base -->
+  <rect x="24" y="52" width="16" height="4" rx="2" fill="#2563EB"/>
+  <!-- Rim -->
+  <ellipse cx="32" cy="8" rx="14" ry="3" fill="#60A5FA" stroke="#2563EB" stroke-width="1"/>
+  <!-- Outline -->
+  <path d="M22 12L18 8H46L42 12C44 16 48 22 48 30C48 36 44 40 38 42L36 44V52H28V44L26 42C20 40 16 36 16 30C16 22 20 16 22 12Z" stroke="#1E40AF" stroke-width="1.5"/>
+</svg>

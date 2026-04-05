@@ -1,0 +1,26 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Crown body -->
+  <path d="M6 48L12 18L22 30L32 10L42 30L52 18L58 48H6Z" fill="#F59E0B"/>
+  <!-- Inner shadow -->
+  <path d="M6 48L12 18L22 30L32 10L42 30L52 18L58 48H6Z" fill="url(#crownGrad)" opacity="0.4"/>
+  <!-- Jewel band -->
+  <rect x="8" y="42" width="48" height="6" rx="1" fill="#D97706"/>
+  <!-- Band highlight -->
+  <rect x="8" y="42" width="48" height="2" fill="#FBBF24" opacity="0.5"/>
+  <!-- Jewels on band -->
+  <circle cx="20" cy="45" r="2.5" fill="#EF4444" stroke="#B91C1C" stroke-width="0.5"/>
+  <circle cx="32" cy="45" r="2.5" fill="#3B82F6" stroke="#1D4ED8" stroke-width="0.5"/>
+  <circle cx="44" cy="45" r="2.5" fill="#10B981" stroke="#047857" stroke-width="0.5"/>
+  <!-- Tip jewels -->
+  <circle cx="32" cy="12" r="2" fill="#EF4444" stroke="#F59E0B" stroke-width="1"/>
+  <circle cx="12" cy="20" r="1.5" fill="#FBBF24"/>
+  <circle cx="52" cy="20" r="1.5" fill="#FBBF24"/>
+  <!-- Gold highlights -->
+  <path d="M22 30L32 10" stroke="#FDE68A" stroke-width="1" opacity="0.5"/>
+  <path d="M42 30L32 10" stroke="#FDE68A" stroke-width="1" opacity="0.5"/>
+  <!-- Outline -->
+  <path d="M6 48L12 18L22 30L32 10L42 30L52 18L58 48H6Z" stroke="#92400E" stroke-width="1.5"/>
+  <defs>
+    <linearGradient id="crownGrad" x1="32" y1="10" x2="32" y2="48"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#92400E"/></linearGradient>
+  </defs>
+</svg>

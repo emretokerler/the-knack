@@ -1,0 +1,19 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ornate gold frame -->
+  <rect x="6" y="8" width="52" height="48" rx="2" fill="#92400E" stroke="#B45309" stroke-width="2"/>
+  <rect x="8" y="10" width="48" height="44" rx="1" fill="#78350F"/>
+  <!-- Inner frame bevel -->
+  <rect x="11" y="13" width="42" height="38" fill="#1E293B"/>
+  <!-- Canvas with landscape -->
+  <rect x="13" y="15" width="38" height="34" fill="#1E3A5F"/>
+  <!-- Mountains -->
+  <path d="M13 40L24 22L32 32L40 18L51 40Z" fill="#334155"/>
+  <path d="M13 42L20 30L28 38L51 42Z" fill="#475569"/>
+  <!-- Sun -->
+  <circle cx="42" cy="22" r="4" fill="#FBBF24" opacity="0.9"/>
+  <!-- Ground -->
+  <rect x="13" y="40" width="38" height="9" fill="#365314" opacity="0.7"/>
+  <!-- Frame highlights -->
+  <line x1="6" y1="8" x2="58" y2="8" stroke="#D97706" stroke-width="1" opacity="0.6"/>
+  <line x1="6" y1="8" x2="6" y2="56" stroke="#D97706" stroke-width="1" opacity="0.4"/>
+</svg>

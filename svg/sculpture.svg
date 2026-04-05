@@ -1,0 +1,21 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pedestal -->
+  <rect x="18" y="52" width="28" height="6" rx="1" fill="#94A3B8" stroke="#64748B" stroke-width="1"/>
+  <rect x="22" y="48" width="20" height="5" fill="#CBD5E1"/>
+  <!-- Neck -->
+  <rect x="28" y="38" width="8" height="11" fill="#D6D3D1" rx="2"/>
+  <!-- Head -->
+  <ellipse cx="32" cy="28" rx="11" ry="14" fill="#E7E5E4"/>
+  <!-- Face features -->
+  <ellipse cx="27" cy="26" rx="1.5" ry="2" fill="#A8A29E"/>
+  <ellipse cx="37" cy="26" rx="1.5" ry="2" fill="#A8A29E"/>
+  <path d="M30 32Q32 34 34 32" stroke="#A8A29E" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M31 28L32 30L33 28" stroke="#A8A29E" stroke-width="0.8" fill="none"/>
+  <!-- Hair / top of head detail -->
+  <path d="M21 24C21 16 26 12 32 12C38 12 43 16 43 24" stroke="#D6D3D1" stroke-width="2" fill="#D6D3D1"/>
+  <!-- Shadow on marble -->
+  <ellipse cx="32" cy="28" rx="11" ry="14" fill="url(#sculptGrad)" opacity="0.3"/>
+  <defs>
+    <radialGradient id="sculptGrad" cx="0.3" cy="0.3"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="#78716C"/></radialGradient>
+  </defs>
+</svg>

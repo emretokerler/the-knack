@@ -1,0 +1,27 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mask face shape -->
+  <path d="M32 4C18 4 10 16 10 28C10 38 14 46 20 52L28 58H36L44 52C50 46 54 38 54 28C54 16 46 4 32 4Z" fill="#FBBF24"/>
+  <!-- Mask shading -->
+  <path d="M32 4C18 4 10 16 10 28C10 38 14 46 20 52L28 58H36L44 52C50 46 54 38 54 28C54 16 46 4 32 4Z" fill="url(#maskGrad)" opacity="0.3"/>
+  <!-- Eye holes -->
+  <ellipse cx="22" cy="26" rx="6" ry="5" fill="#0F172A"/>
+  <ellipse cx="42" cy="26" rx="6" ry="5" fill="#0F172A"/>
+  <!-- Eye hole gold rims -->
+  <ellipse cx="22" cy="26" rx="6" ry="5" stroke="#D97706" stroke-width="1.5" fill="none"/>
+  <ellipse cx="42" cy="26" rx="6" ry="5" stroke="#D97706" stroke-width="1.5" fill="none"/>
+  <!-- Nose bridge -->
+  <path d="M30 24V34L32 38L34 34V24" stroke="#D97706" stroke-width="1" fill="none"/>
+  <!-- Mouth slit -->
+  <path d="M24 44C28 46 36 46 40 44" stroke="#92400E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Forehead decoration -->
+  <path d="M22 12L32 8L42 12" stroke="#D97706" stroke-width="1.5" fill="none"/>
+  <circle cx="32" cy="14" r="2" fill="#EF4444" stroke="#D97706" stroke-width="0.5"/>
+  <!-- Cheek lines -->
+  <path d="M14 32L18 30" stroke="#D97706" stroke-width="0.8" opacity="0.5"/>
+  <path d="M50 32L46 30" stroke="#D97706" stroke-width="0.8" opacity="0.5"/>
+  <!-- Outline -->
+  <path d="M32 4C18 4 10 16 10 28C10 38 14 46 20 52L28 58H36L44 52C50 46 54 38 54 28C54 16 46 4 32 4Z" stroke="#92400E" stroke-width="1.5"/>
+  <defs>
+    <radialGradient id="maskGrad" cx="0.35" cy="0.3"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#92400E"/></radialGradient>
+  </defs>
+</svg>
