@@ -260,12 +260,74 @@
             </div>
 
             <nav class="flex justify-center gap-12 border-b border-slate-800 w-full">
-                <button onclick="switchTab('visualizer')" id="tabBtn-visualizer" data-i18n="nav_solution" class="tab-btn active px-4 py-3 text-xs font-bold tracking-widest uppercase">Solution</button>
+                <button onclick="switchTab('problem')" id="tabBtn-problem" data-i18n="nav_problem" class="tab-btn active px-4 py-3 text-xs font-bold tracking-widest uppercase">Problem</button>
+                <button onclick="switchTab('visualizer')" id="tabBtn-visualizer" data-i18n="nav_solution" class="tab-btn px-4 py-3 text-xs font-bold tracking-widest uppercase">Solution</button>
                 <button onclick="switchTab('game')" id="tabBtn-game" data-i18n="nav_game" class="tab-btn px-4 py-3 text-xs font-bold tracking-widest uppercase">Play The Knack</button>
             </nav>
         </header>
 
-        <div id="tab-visualizer" class="space-y-8">
+        <div id="tab-problem" class="space-y-8">
+            <div class="glass-panel p-8 md:p-12 max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-white mb-2" data-i18n="prob_title">The 0/1 Knapsack Problem</h2>
+                <p class="text-slate-400 text-sm mb-8" data-i18n="prob_subtitle">A classic combinatorial optimization problem</p>
+
+                <div class="space-y-8 text-slate-300 text-sm leading-relaxed">
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_what_title">What is it?</h3>
+                        <p data-i18n="prob_what">You have a bag (knapsack) with a maximum weight capacity W. You are given n items, each with a weight and a value. Your goal is to select a subset of items that maximizes total value without exceeding the weight limit. Each item can either be taken or left behind (0 or 1) -- you cannot take a fraction of an item.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 mono text-xs">
+                        <p class="text-slate-500 mb-2 font-sans text-[10px] uppercase font-bold tracking-widest" data-i18n="prob_formal">Formal Definition</p>
+                        <p class="text-slate-200">maximize &sum; v<sub>i</sub> &middot; x<sub>i</sub></p>
+                        <p class="text-slate-400 mt-1">subject to &sum; w<sub>i</sub> &middot; x<sub>i</sub> &le; W</p>
+                        <p class="text-slate-500 mt-1">where x<sub>i</sub> &isin; {0, 1}</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_why_title">Why does it matter?</h3>
+                        <p data-i18n="prob_why">The knapsack problem appears everywhere: budget allocation, cargo loading, resource scheduling, portfolio optimization, and even cutting stock. It is NP-hard in general, meaning there is no known algorithm that solves all instances quickly. However, when the capacity W is an integer, Dynamic Programming solves it in O(nW) time -- pseudo-polynomial, but fast enough in practice.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_greedy_title">Why not just be greedy?</h3>
+                        <p data-i18n="prob_greedy">A greedy approach (always pick the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy picks the first item ($60) and stops. But picking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_dp_title">The DP Solution</h3>
+                        <p data-i18n="prob_dp">Dynamic Programming builds a table M[i][w] where each cell represents the best value achievable using the first i items with capacity w. For each item, we compare two choices:</p>
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 mono text-xs mt-3">
+                            <p class="text-emerald-400">M[i][w] = max(</p>
+                            <p class="text-slate-300 ml-4">M[i-1][w],<span class="text-slate-500 ml-4">// skip item i</span></p>
+                            <p class="text-slate-300 ml-4">v<sub>i</sub> + M[i-1][w - w<sub>i</sub>]<span class="text-slate-500 ml-4">// take item i</span></p>
+                            <p class="text-emerald-400">)</p>
+                        </div>
+                        <p class="mt-3" data-i18n="prob_dp2">The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was picked.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_complexity_title">Complexity</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
+                                <p class="text-[10px] text-slate-500 uppercase mb-1">Time</p>
+                                <p class="mono text-lg font-bold text-white">O(n &middot; W)</p>
+                            </div>
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-center">
+                                <p class="text-[10px] text-slate-500 uppercase mb-1">Space</p>
+                                <p class="mono text-lg font-bold text-white">O(n &middot; W)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-4">
+                        <button onclick="switchTab('game')" class="bg-blue-600 hover:bg-blue-500 px-8 py-3 rounded-xl font-bold text-sm uppercase tracking-widest transition-all" data-i18n="prob_cta">Try it yourself</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-visualizer" class="hidden space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div class="glass-panel p-6 flex flex-col">
                     <div class="mb-6 flex justify-between items-center">
@@ -446,7 +508,7 @@
     <script>
         const i18n = {
             en: {
-                max_capacity: "Max Capacity (W)", nav_solution: "Solution", nav_game: "Play The Knack",
+                max_capacity: "Max Capacity (W)", nav_problem: "Problem", nav_solution: "Solution", nav_game: "Play The Knack",
                 dataset_title: "Dataset", dp_table_title: "DP Table", dp_table_hint: "Hover over cells for logic",
                 backtrack_path: "Backtrack Path", available_items: "Items", reset_items: "Reset Selection",
                 total_weight: "Total Weight", total_value: "Total Value", optimality: "Optimality",
@@ -454,12 +516,26 @@
                 overloaded: "OVERLOADED", picked: "Picked", skipped: "Skipped", row_empty: "Empty",
                 time_up: "Time's up!", difficulty: "Difficulty",
                 diff_easy: "Easy", diff_medium: "Medium", diff_hard: "Hard",
+                prob_title: "The 0/1 Knapsack Problem",
+                prob_subtitle: "A classic combinatorial optimization problem",
+                prob_what_title: "What is it?",
+                prob_what: "You have a bag (knapsack) with a maximum weight capacity W. You are given n items, each with a weight and a value. Your goal is to select a subset of items that maximizes total value without exceeding the weight limit. Each item can either be taken or left behind (0 or 1) -- you cannot take a fraction of an item.",
+                prob_formal: "Formal Definition",
+                prob_why_title: "Why does it matter?",
+                prob_why: "The knapsack problem appears everywhere: budget allocation, cargo loading, resource scheduling, portfolio optimization, and even cutting stock. It is NP-hard in general, meaning there is no known algorithm that solves all instances quickly. However, when the capacity W is an integer, Dynamic Programming solves it in O(nW) time -- pseudo-polynomial, but fast enough in practice.",
+                prob_greedy_title: "Why not just be greedy?",
+                prob_greedy: "A greedy approach (always pick the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy picks the first item ($60) and stops. But picking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.",
+                prob_dp_title: "The DP Solution",
+                prob_dp: "Dynamic Programming builds a table M[i][w] where each cell represents the best value achievable using the first i items with capacity w. For each item, we compare two choices:",
+                prob_dp2: "The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was picked.",
+                prob_complexity_title: "Complexity",
+                prob_cta: "Try it yourself",
                 tip_base: "Base case: Value is 0",
                 tip_skip: "Item too heavy: Take previous best value",
                 tip_compare: "Comparing options:\n1. Keep previous best: {prev}\n2. Pick this (+${val}): {calc}\nResult: Max of both"
             },
             tr: {
-                max_capacity: "Maks. Kapasite", nav_solution: "Analiz", nav_game: "Oyunu Oyna",
+                max_capacity: "Maks. Kapasite", nav_problem: "Problem", nav_solution: "Analiz", nav_game: "Oyunu Oyna",
                 dataset_title: "Veri Seti", dp_table_title: "DP Tablosu", dp_table_hint: "Mantık için üzerine gel",
                 backtrack_path: "Geri İzleme", available_items: "Eşyalar", reset_items: "Seçimi Sıfırla",
                 total_weight: "Toplam Ağırlık", total_value: "Toplam Değer", optimality: "Optimallik",
@@ -467,6 +543,20 @@
                 overloaded: "AŞILDI", picked: "Alındı", skipped: "Geçildi", row_empty: "Boş",
                 time_up: "Süre doldu!", difficulty: "Zorluk",
                 diff_easy: "Kolay", diff_medium: "Orta", diff_hard: "Zor",
+                prob_title: "0/1 Sırt Çantası Problemi",
+                prob_subtitle: "Klasik bir kombinatoryal optimizasyon problemi",
+                prob_what_title: "Nedir?",
+                prob_what: "Maksimum ağırlık kapasitesi W olan bir çantanız var. Her birinin bir ağırlığı ve değeri olan n adet eşya verilir. Amacınız, ağırlık sınırını aşmadan toplam değeri en yüksek yapacak bir alt küme seçmektir. Her eşya ya alınır ya da bırakılır (0 veya 1) -- bir eşyanın kesri alınamaz.",
+                prob_formal: "Formal Tanım",
+                prob_why_title: "Neden önemli?",
+                prob_why: "Sırt çantası problemi her yerde karşımıza çıkar: bütçe tahsisi, kargo yükleme, kaynak planlaması, portföy optimizasyonu ve kesim stoku. Genel olarak NP-zordur, yani tüm örnekleri hızla çözen bilinen bir algoritma yoktur. Ancak kapasite W bir tam sayı olduğunda, Dinamik Programlama O(nW) sürede çözer -- sözde-polinom, ama pratikte yeterince hızlı.",
+                prob_greedy_title: "Neden açgözlü olmak yetmez?",
+                prob_greedy: "Açgözlü yaklaşım (her zaman en iyi değer/ağırlık oranına sahip eşyayı seç) sezgisel görünür ama başarısız olur. Örnek: kapasite = 10, eşyalar = [(değer: 60, ağırlık: 10), (değer: 50, ağırlık: 5), (değer: 50, ağırlık: 5)]. Açgözlü ilk eşyayı seçer (60$) ve durur. Ama iki küçük eşyayı seçmek 100$ verir -- çok daha iyi.",
+                prob_dp_title: "DP Çözümü",
+                prob_dp: "Dinamik Programlama, her hücrenin ilk i eşya ile w kapasitede elde edilebilecek en iyi değeri temsil ettiği M[i][w] tablosu oluşturur. Her eşya için iki seçeneği karşılaştırırız:",
+                prob_dp2: "Son cevap M[n][W]'dir. Hangi eşyaların seçildiğini bulmak için tabloyu geriye izleriz: M[i][w], M[i-1][w]'den farklıysa, i. eşya seçilmiştir.",
+                prob_complexity_title: "Karmaşıklık",
+                prob_cta: "Kendin dene",
                 tip_base: "Temel durum: Değer 0",
                 tip_skip: "Eşya çok ağır: Önceki en iyi değeri al",
                 tip_compare: "Seçenekleri karşılaştır:\n1. Önceki en iyiyi koru: {prev}\n2. Bunu al (+${val}): {calc}\nSonuç: İkisinden büyüğü"
@@ -1143,15 +1233,15 @@
         function closeModal() { document.getElementById('resultModal').classList.add('hidden'); }
 
         function switchTab(t) {
-            const isGame = t === 'game';
-            document.getElementById('tab-game').classList.toggle('hidden', !isGame);
-            document.getElementById('tab-visualizer').classList.toggle('hidden', isGame);
-            document.getElementById('tabBtn-game').classList.toggle('active', isGame);
-            document.getElementById('tabBtn-visualizer').classList.toggle('active', !isGame);
+            const tabs = ['problem', 'visualizer', 'game'];
+            tabs.forEach(tab => {
+                document.getElementById(`tab-${tab}`).classList.toggle('hidden', tab !== t);
+                document.getElementById(`tabBtn-${tab}`).classList.toggle('active', tab === t);
+            });
 
             const desktopBrand = document.getElementById('brandTitle');
             const mobileBrand = document.getElementById('mobileBrandTitle');
-            if (isGame) {
+            if (t === 'game') {
                 desktopBrand.classList.remove('opacity-0', 'translate-x-[-20px]');
                 desktopBrand.classList.add('opacity-100', 'translate-x-0');
                 mobileBrand.classList.add('opacity-100');
