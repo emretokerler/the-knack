@@ -587,7 +587,7 @@
 
         function initPhysics() {
             if (typeof decomp !== 'undefined') Matter.Common.setDecomp(decomp);
-            engine = Matter.Engine.create(); engine.gravity.y = 1.8;
+            engine = Matter.Engine.create(); engine.gravity.y = 0;
             Matter.Composite.add(engine.world, [
                 Matter.Bodies.rectangle(120, 215, 240, 40, {isStatic:true}),
                 Matter.Bodies.rectangle(-10, 100, 20, 200, {isStatic:true}),
