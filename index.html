@@ -440,7 +440,7 @@
         function populateLab() {
             const labList = document.getElementById('labItemList');
             labList.innerHTML = items.map(it =>
-                `<div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/40 flex justify-between items-center"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">${it.w}kg</p></div></div><span class="text-base font-mono font-extrabold text-yellow-400">$${it.v}</span></div>`
+                `<div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/40 flex justify-between items-center"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p></div></div><div class="flex items-center gap-3"><span class="text-sm font-mono font-bold text-slate-300">${it.w}<span class="text-[10px] text-slate-500">kg</span></span><span class="text-base font-mono font-extrabold text-yellow-400">$${it.v}</span></div></div>`
             ).join('');
 
             const table = document.getElementById('dpTable');
@@ -475,7 +475,7 @@
                 const i = items.length - idx;
                 const pick = dpMatrix[i][backtrackW] !== dpMatrix[i-1][backtrackW];
                 if(pick) backtrackW -= it.w;
-                return `<div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 transition-all ${pick ? 'ring-1 ring-emerald-500' : ''}"><div class="flex justify-between items-center mb-4"><div class="w-12 h-12 rounded-xl ${it.c} flex items-center justify-center">${it.i}</div><span class="${pick ? 'text-emerald-400' : 'text-slate-600'} text-[10px] font-black uppercase">${pick ? i18n[currentLang].picked : i18n[currentLang].skipped}</span></div><p class="text-sm font-bold text-white mb-1">${it[currentLang]}</p><div class="flex items-center justify-between mt-1"><span class="text-[10px] font-mono text-slate-500">${it.w}kg</span><span class="text-base font-mono font-extrabold ${pick ? 'text-emerald-400' : 'text-yellow-400/40'}">$${it.v}</span></div></div>`;
+                return `<div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 transition-all ${pick ? 'ring-1 ring-emerald-500' : ''}"><div class="flex justify-between items-center mb-4"><div class="w-12 h-12 rounded-xl ${it.c} flex items-center justify-center">${it.i}</div><span class="${pick ? 'text-emerald-400' : 'text-slate-600'} text-[10px] font-black uppercase">${pick ? i18n[currentLang].picked : i18n[currentLang].skipped}</span></div><p class="text-sm font-bold text-white mb-1">${it[currentLang]}</p><div class="flex items-center justify-between mt-1"><span class="text-sm font-mono font-bold ${pick ? 'text-slate-200' : 'text-slate-500'}">${it.w}<span class="text-[10px]">kg</span></span><span class="text-base font-mono font-extrabold ${pick ? 'text-emerald-400' : 'text-yellow-400/40'}">$${it.v}</span></div></div>`;
             }).reverse().join('');
         }
 
@@ -529,7 +529,7 @@
                 const card = document.createElement('div');
                 card.className = `item-card glass-panel p-3 flex justify-between items-center ${sel ? 'item-selected border-blue-500/50' : 'border-slate-800'} ${isLocked ? 'item-locked' : 'hover:bg-white/5'}`;
                 card.onclick = () => !isLocked && toggle(i);
-                card.innerHTML = `<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p><p class="text-[10px] font-mono text-slate-500">${it.w}kg</p></div></div><div class="flex items-center gap-2"><span class="text-sm font-mono font-extrabold text-yellow-400">$${it.v}</span>${sel ? '<span class="text-blue-400">✓</span>' : ''}</div>`;
+                card.innerHTML = `<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p></div></div><div class="flex items-center gap-3"><span class="text-sm font-mono font-bold text-slate-300">${it.w}<span class="text-[10px] text-slate-500">kg</span></span><span class="text-sm font-mono font-extrabold text-yellow-400">$${it.v}</span>${sel ? '<span class="text-blue-400">✓</span>' : ''}</div>`;
                 grid.appendChild(card);
                 if(sel) {
                     const t = document.createElement('div'); t.className = "flex justify-between items-center text-slate-400 py-1.5 border-b border-slate-800/50 text-[10px]";
