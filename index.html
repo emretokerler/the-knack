@@ -188,6 +188,13 @@
             box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
         }
 
+        /* Timer */
+        .timer-urgent { animation: timer-pulse 0.5s ease infinite; }
+        @keyframes timer-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
         /* Fireworks */
         .firework-canvas {
             position: fixed;
@@ -291,7 +298,14 @@
                 </div>
 
                 <div class="lg:col-span-6 glass-panel p-8 flex flex-col items-center relative min-h-[500px]">
-                    <div id="bagContainer" class="relative w-full max-w-[240px] mt-12 mb-10">
+                    <!-- Timer -->
+                    <div id="timerDisplay" class="hidden mb-4">
+                        <div class="flex items-center gap-3 bg-slate-900/80 px-6 py-3 rounded-2xl border border-slate-800">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            <span id="timerValue" class="text-2xl font-mono font-extrabold text-white tracking-wider">0:30</span>
+                        </div>
+                    </div>
+                    <div id="bagContainer" class="relative w-full max-w-[240px] mt-4 mb-10">
                         <div class="w-1/2 h-4 bg-slate-600 rounded-t-xl mx-auto mb-[-4px] border-t border-x border-slate-500 shadow-inner opacity-20"></div>
                         <div id="bagVisual" class="knapsack-visual w-full"></div>
                     </div>
@@ -349,6 +363,21 @@
                         <span id="inputCountVal" class="w-10 text-center font-mono font-bold">5</span>
                     </div>
                 </div>
+                <div>
+                    <label data-i18n="difficulty" class="block text-[10px] text-slate-400 uppercase font-black tracking-widest mb-3">Difficulty</label>
+                    <div class="flex gap-2">
+                        <button onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-700 text-slate-400">Easy</button>
+                        <button onclick="setDifficulty('medium')" id="diff-medium" class="diff-btn flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-600 border border-blue-600 text-white">Medium</button>
+                        <button onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-700 text-slate-400">Hard</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-400 uppercase font-black tracking-widest mb-3">Timer</label>
+                    <div class="flex items-center gap-4">
+                        <input type="range" id="inputTimerRange" min="0" max="60" step="5" value="0" class="flex-grow">
+                        <span id="inputTimerVal" class="w-16 text-center font-mono font-bold">Off</span>
+                    </div>
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="closeConfigModal()" class="py-3 rounded-xl border border-slate-700 text-slate-400">Cancel</button>
@@ -386,6 +415,8 @@
                 total_weight: "Total Weight", total_value: "Total Value", optimality: "Optimality",
                 inventory_log: "Inventory Log", view_analysis: "See Optimum", config_title: "Settings",
                 overloaded: "OVERLOADED", picked: "Picked", skipped: "Skipped", row_empty: "Empty",
+                time_up: "Time's up!", difficulty: "Difficulty",
+                diff_easy: "Easy", diff_medium: "Medium", diff_hard: "Hard",
                 tip_base: "Base case: Value is 0",
                 tip_skip: "Item too heavy: Take previous best value",
                 tip_compare: "Comparing options:\n1. Keep previous best: {prev}\n2. Pick this (+${val}): {calc}\nResult: Max of both"
@@ -397,6 +428,8 @@
                 total_weight: "Toplam Ağırlık", total_value: "Toplam Değer", optimality: "Optimallik",
                 inventory_log: "Envanter Kaydı", view_analysis: "Optimumu Gör", config_title: "Ayarlar",
                 overloaded: "AŞILDI", picked: "Alındı", skipped: "Geçildi", row_empty: "Boş",
+                time_up: "Süre doldu!", difficulty: "Zorluk",
+                diff_easy: "Kolay", diff_medium: "Orta", diff_hard: "Zor",
                 tip_base: "Temel durum: Değer 0",
                 tip_skip: "Eşya çok ağır: Önceki en iyi değeri al",
                 tip_compare: "Seçenekleri karşılaştır:\n1. Önceki en iyiyi koru: {prev}\n2. Bunu al (+${val}): {calc}\nSonuç: İkisinden büyüğü"
@@ -405,6 +438,8 @@
 
         let currentLang = 'en', capacity = 10, items = [], userIndices = new Set(), itemCount = 5;
         let engine, runner, bodies = new Map(), dpMatrix = [], currentOptimalValue = 0;
+        let difficulty = 'medium'; // easy, medium, hard
+        let timerInterval = null, timerSeconds = 0, timerRunning = false;
 
         // ── Theme System ──
         const themes = {
@@ -494,18 +529,49 @@
             updateUI(); populateLab();
         }
 
+        // Difficulty presets control how tricky the generated puzzle is
+        const difficultyPresets = {
+            easy: {
+                // Clear value/weight ratios - greedy often works, few traps
+                archetypes: [
+                    {wMin:1, wMax:2, vMin:10, vMax:20},  // light, decent value
+                    {wMin:2, wMax:3, vMin:18, vMax:30},  // medium, good value
+                    {wMin:3, wMax:4, vMin:25, vMax:40},  // heavy, high value
+                    {wMin:1, wMax:2, vMin:5, vMax:10},   // obvious junk
+                    {wMin:4, wMax:5, vMin:35, vMax:50},  // big obvious treasure
+                ],
+                overflowMin: 1.2, overflowMax: 2.0,  // mild overflow
+                timerBonus: 10  // extra seconds
+            },
+            medium: {
+                // Mixed ratios - some traps, greedy fails sometimes
+                archetypes: [
+                    {wMin:1, wMax:2, vMin:8, vMax:22},   // light bargain
+                    {wMin:2, wMax:4, vMin:12, vMax:30},  // medium balanced
+                    {wMin:3, wMax:5, vMin:20, vMax:45},  // heavy valuable
+                    {wMin:1, wMax:3, vMin:4, vMax:12},   // light junk (trap)
+                    {wMin:4, wMax:6, vMin:30, vMax:50},  // heavy treasure
+                ],
+                overflowMin: 1.3, overflowMax: 2.5,
+                timerBonus: 0
+            },
+            hard: {
+                // Deceptive ratios - greedy traps everywhere, tight capacity
+                archetypes: [
+                    {wMin:1, wMax:2, vMin:12, vMax:25},  // sneaky bargain (best ratio)
+                    {wMin:3, wMax:5, vMin:15, vMax:28},  // heavy but mediocre (trap)
+                    {wMin:2, wMax:3, vMin:8, vMax:14},   // looks fair, actually bad
+                    {wMin:4, wMax:6, vMin:40, vMax:50},  // tempting but too heavy
+                    {wMin:1, wMax:3, vMin:18, vMax:35},  // hidden gem
+                ],
+                overflowMin: 1.5, overflowMax: 3.0,  // heavy overflow
+                timerBonus: -5  // less time
+            }
+        };
+
         function shuffleValues() {
-            // Generate items that create interesting knapsack puzzles:
-            // - Total weight always exceeds capacity (can't take everything)
-            // - Mix of tempting heavy items and efficient light ones
-            // - Varied value/weight ratios so greedy != optimal
-            const archetypes = [
-                {wMin:1, wMax:2, vMin:8, vMax:18},   // light bargain
-                {wMin:2, wMax:4, vMin:15, vMax:30},   // medium balanced
-                {wMin:3, wMax:5, vMin:20, vMax:45},   // heavy valuable
-                {wMin:1, wMax:3, vMin:5, vMax:12},    // light junk (trap)
-                {wMin:4, wMax:6, vMin:35, vMax:50},   // very heavy treasure
-            ];
+            const preset = difficultyPresets[difficulty];
+            const archetypes = preset.archetypes;
 
             let attempts = 0;
             do {
@@ -515,20 +581,38 @@
                     const v = arch.vMin + Math.floor(Math.random() * (arch.vMax - arch.vMin + 1));
                     return { ...getTypes()[i % getTypes().length], v, w };
                 });
-                // Shuffle item order so archetypes aren't always in the same position
+                // Shuffle so archetypes aren't in predictable positions
                 for (let i = items.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [items[i], items[j]] = [items[j], items[i]];
                 }
                 const totalW = items.reduce((s, it) => s + it.w, 0);
-                // Ensure total weight exceeds capacity by at least 30% (real tradeoffs)
-                // and optimal picks roughly 40-80% of items (not trivial)
-                if (totalW >= capacity * 1.3 && totalW <= capacity * 3) break;
+                if (totalW >= capacity * preset.overflowMin && totalW <= capacity * preset.overflowMax) {
+                    // For hard: also verify greedy (best ratio first) != optimal
+                    if (difficulty === 'hard') {
+                        const greedyVal = getGreedyValue();
+                        calculateOptimal();
+                        if (greedyVal < currentOptimalValue) break; // greedy fails = good puzzle
+                    } else {
+                        break;
+                    }
+                }
                 attempts++;
-            } while (attempts < 50);
+            } while (attempts < 80);
 
             items.forEach(it => it.size = 25 + (it.w * 12));
             clearSelection(); calculateOptimal(); updateUI(); populateLab();
+            startTimer();
+        }
+
+        // Simulate greedy: pick items by best value/weight ratio until full
+        function getGreedyValue() {
+            const sorted = items.slice().sort((a, b) => (b.v / b.w) - (a.v / a.w));
+            let w = 0, v = 0;
+            for (const it of sorted) {
+                if (w + it.w <= capacity) { w += it.w; v += it.v; }
+            }
+            return v;
         }
 
         function calculateOptimal() {
@@ -719,12 +803,16 @@
             bodies.forEach(b => { Matter.Composite.remove(engine.world, b.body); b.el.remove(); });
             bodies.clear();
             hasTriggeredFireworks = false;
+            stopTimer();
             updateUI();
         }
 
         function openConfigModal() {
             document.getElementById('inputCapRange').value = capacity; document.getElementById('inputCountRange').value = itemCount;
             document.getElementById('inputCapVal').innerText = capacity; document.getElementById('inputCountVal').innerText = itemCount;
+            document.getElementById('inputTimerRange').value = timerSeconds;
+            document.getElementById('inputTimerVal').innerText = timerSeconds === 0 ? 'Off' : timerSeconds + 's';
+            setDifficulty(difficulty);
             document.getElementById('configModal').classList.remove('hidden'); document.getElementById('configModal').classList.add('flex');
         }
 
@@ -733,8 +821,56 @@
         function applyConfig() {
             capacity = parseInt(document.getElementById('inputCapRange').value);
             itemCount = parseInt(document.getElementById('inputCountRange').value);
+            timerSeconds = parseInt(document.getElementById('inputTimerRange').value);
             document.getElementById('capDisplay').innerText = capacity;
             shuffleValues(); closeConfigModal();
+        }
+
+        function setDifficulty(d) {
+            difficulty = d;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                const active = btn.id === `diff-${d}`;
+                btn.className = `diff-btn flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border ${active ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-700 text-slate-400'}`;
+            });
+        }
+
+        function startTimer() {
+            stopTimer();
+            const display = document.getElementById('timerDisplay');
+            if (timerSeconds <= 0) { display.classList.add('hidden'); return; }
+
+            const preset = difficultyPresets[difficulty];
+            let remaining = Math.max(5, timerSeconds + (preset.timerBonus || 0));
+            display.classList.remove('hidden');
+            timerRunning = true;
+            updateTimerDisplay(remaining);
+
+            timerInterval = setInterval(() => {
+                remaining--;
+                updateTimerDisplay(remaining);
+                if (remaining <= 0) {
+                    stopTimer();
+                    compareWithAI(); // auto-show results
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            timerRunning = false;
+            const el = document.getElementById('timerValue');
+            if (el) el.classList.remove('timer-urgent', 'text-red-400', 'text-amber-400');
+        }
+
+        function updateTimerDisplay(sec) {
+            const el = document.getElementById('timerValue');
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            el.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+            el.classList.remove('timer-urgent', 'text-red-400', 'text-amber-400', 'text-white');
+            if (sec <= 5) { el.classList.add('timer-urgent', 'text-red-400'); }
+            else if (sec <= 10) { el.classList.add('text-amber-400'); }
+            else { el.classList.add('text-white'); }
         }
 
         const verdicts = {
@@ -850,6 +986,10 @@
 
         document.getElementById('inputCapRange').oninput = (e) => document.getElementById('inputCapVal').innerText = e.target.value;
         document.getElementById('inputCountRange').oninput = (e) => document.getElementById('inputCountVal').innerText = e.target.value;
+        document.getElementById('inputTimerRange').oninput = (e) => {
+            const v = parseInt(e.target.value);
+            document.getElementById('inputTimerVal').innerText = v === 0 ? 'Off' : v + 's';
+        };
 
         // Fireworks
         function launchFireworks() {
