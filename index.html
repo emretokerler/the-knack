@@ -89,7 +89,6 @@
 
         .item-card { transition: all 0.2s ease; cursor: pointer; }
         .item-selected { border-color: #3b82f6; background: rgba(59,130,246,0.15); transform: translateY(-2px); }
-        .item-locked { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
 
         .tab-btn { transition: all 0.3s; border-bottom: 2px solid transparent; opacity: 0.6; }
         .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; opacity: 1; }
@@ -154,6 +153,48 @@
             color: #64748b;
         }
         .lang-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        /* Value progress bar */
+        .progress-track {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 9999px;
+            height: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease;
+            position: relative;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+            animation: progress-shimmer 2s infinite;
+        }
+        @keyframes progress-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .progress-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .progress-perfect {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* Fireworks */
+        .firework-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 200;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 select-none">
@@ -245,12 +286,7 @@
                         <h3 data-i18n="available_items" class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">Available Items</h3>
                         <div id="lootGrid" class="space-y-3"></div>
                     </div>
-                    <div class="flex flex-col gap-3">
-                        <button onclick="clearSelection()" data-i18n="reset_items" class="w-full text-slate-500 hover:text-slate-300 py-1 text-[10px] uppercase font-bold tracking-widest transition-all">Reset Items</button>
-                        <button id="commitBtn" onclick="submitSelection()" class="w-full bg-slate-800 hover:bg-emerald-600/80 py-4 rounded-xl font-bold transition-all shadow-xl text-xs uppercase tracking-[0.2em] border border-slate-700 flex items-center justify-center gap-2">
-                            <span data-i18n="confirm_selection">Confirm Selection</span>
-                        </button>
-                    </div>
+                    <button onclick="clearSelection()" data-i18n="reset_items" class="w-full text-slate-500 hover:text-slate-300 py-1 text-[10px] uppercase font-bold tracking-widest transition-all">Reset Items</button>
                 </div>
 
                 <div class="lg:col-span-6 glass-panel p-8 flex flex-col items-center relative min-h-[500px]">
@@ -258,6 +294,17 @@
                         <div class="w-1/2 h-4 bg-slate-600 rounded-t-xl mx-auto mb-[-4px] border-t border-x border-slate-500 shadow-inner opacity-20"></div>
                         <div id="bagVisual" class="knapsack-visual w-full"></div>
                     </div>
+                    <!-- Value progress bar -->
+                    <div class="w-full max-w-md mb-6">
+                        <div class="flex justify-between items-end mb-2">
+                            <span data-i18n="optimality" class="text-[10px] uppercase font-bold text-slate-500 tracking-[0.2em]">Optimality</span>
+                            <span id="progressPct" class="text-lg font-mono font-extrabold text-slate-400">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="progressFill" class="progress-fill progress-glow" style="width: 0%; background: linear-gradient(90deg, #3b82f6, #6366f1);"></div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 w-full gap-6 max-w-md">
                         <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center relative overflow-hidden" id="weightBox">
                             <p data-i18n="total_weight" class="text-[11px] uppercase font-bold text-slate-500 tracking-[0.25em] mb-2">Total Weight</p>
@@ -323,9 +370,11 @@
                 </div>
             </div>
             <p id="resMsg" class="mb-10 text-slate-300 italic"></p>
-            <button onclick="closeModal()" class="w-full bg-slate-800 py-4 rounded-xl font-bold uppercase tracking-widest">Back</button>
+            <button onclick="closeModal()" class="w-full bg-slate-800 py-4 rounded-xl font-bold uppercase tracking-widest">Close</button>
         </div>
     </div>
+
+    <canvas id="fireworkCanvas" class="firework-canvas"></canvas>
 
     <script>
         const i18n = {
@@ -333,8 +382,8 @@
                 max_capacity: "Max Capacity (W)", nav_solution: "Solution", nav_game: "Play The Knack",
                 dataset_title: "Dataset", dp_table_title: "DP Table", dp_table_hint: "Hover over cells for logic",
                 backtrack_path: "Backtrack Path", available_items: "Items", reset_items: "Reset Selection",
-                confirm_selection: "Confirm Selection", total_weight: "Total Weight", total_value: "Total Value",
-                inventory_log: "Inventory Log", view_analysis: "View Analysis", config_title: "Settings",
+                total_weight: "Total Weight", total_value: "Total Value", optimality: "Optimality",
+                inventory_log: "Inventory Log", view_analysis: "See Optimum", config_title: "Settings",
                 overloaded: "OVERLOADED", picked: "Picked", skipped: "Skipped", row_empty: "Empty",
                 tip_base: "Base case: Value is 0",
                 tip_skip: "Item too heavy: Take previous best value",
@@ -344,8 +393,8 @@
                 max_capacity: "Maks. Kapasite", nav_solution: "Analiz", nav_game: "Oyunu Oyna",
                 dataset_title: "Veri Seti", dp_table_title: "DP Tablosu", dp_table_hint: "Mantık için üzerine gel",
                 backtrack_path: "Geri İzleme", available_items: "Eşyalar", reset_items: "Seçimi Sıfırla",
-                confirm_selection: "Seçimi Onayla", total_weight: "Toplam Ağırlık", total_value: "Toplam Değer",
-                inventory_log: "Envanter Kaydı", view_analysis: "Analiz Et", config_title: "Ayarlar",
+                total_weight: "Toplam Ağırlık", total_value: "Toplam Değer", optimality: "Optimallik",
+                inventory_log: "Envanter Kaydı", view_analysis: "Optimumu Gör", config_title: "Ayarlar",
                 overloaded: "AŞILDI", picked: "Alındı", skipped: "Geçildi", row_empty: "Boş",
                 tip_base: "Temel durum: Değer 0",
                 tip_skip: "Eşya çok ağır: Önceki en iyi değeri al",
@@ -354,7 +403,7 @@
         };
 
         let currentLang = 'en', capacity = 10, items = [], userIndices = new Set(), itemCount = 5;
-        let engine, runner, bodies = new Map(), dpMatrix = [], currentOptimalValue = 0, isLocked = false;
+        let engine, runner, bodies = new Map(), dpMatrix = [], currentOptimalValue = 0;
 
         const lootIcons = {
             gold: `<svg class="loot-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FBBF24" stroke="#D97706" stroke-width="1.5"/></svg>`,
@@ -516,10 +565,11 @@
             updateUI();
         }
 
+        let hasTriggeredFireworks = false;
+
         function updateUI() {
             const grid = document.getElementById('lootGrid');
             const trace = document.getElementById('inventoryTrace');
-            const commitBtn = document.getElementById('commitBtn');
             grid.innerHTML = ''; trace.innerHTML = '';
             let totalW = 0, totalV = 0;
 
@@ -527,8 +577,8 @@
                 const sel = userIndices.has(i);
                 if(sel) { totalW += it.w; totalV += it.v; }
                 const card = document.createElement('div');
-                card.className = `item-card glass-panel p-3 flex justify-between items-center ${sel ? 'item-selected border-blue-500/50' : 'border-slate-800'} ${isLocked ? 'item-locked' : 'hover:bg-white/5'}`;
-                card.onclick = () => !isLocked && toggle(i);
+                card.className = `item-card glass-panel p-3 flex justify-between items-center ${sel ? 'item-selected border-blue-500/50' : 'border-slate-800'} hover:bg-white/5`;
+                card.onclick = () => toggle(i);
                 card.innerHTML = `<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg ${it.c} flex items-center justify-center">${it.i}</div><div><p class="text-xs font-bold text-slate-200">${it[currentLang]}</p></div></div><div class="flex items-center gap-3"><span class="text-sm font-mono font-bold text-slate-300">${it.w}<span class="text-[10px] text-slate-500">kg</span></span><span class="text-sm font-mono font-extrabold text-yellow-400">$${it.v}</span>${sel ? '<span class="text-blue-400">✓</span>' : ''}</div>`;
                 grid.appendChild(card);
                 if(sel) {
@@ -542,18 +592,44 @@
             document.getElementById('userValue').innerText = totalV;
             document.getElementById('weightBar').style.width = Math.min((totalW/capacity)*100, 100) + '%';
 
-            if(totalW > capacity) {
+            // Value progress bar
+            const pct = currentOptimalValue > 0 ? Math.min(Math.round((totalV / currentOptimalValue) * 100), 100) : 0;
+            const overweight = totalW > capacity;
+            const effectivePct = overweight ? 0 : pct;
+            const fill = document.getElementById('progressFill');
+            const pctLabel = document.getElementById('progressPct');
+
+            fill.style.width = effectivePct + '%';
+            pctLabel.innerText = (overweight ? '---' : effectivePct + '%');
+
+            if (overweight) {
+                fill.style.background = 'linear-gradient(90deg, #ef4444, #b91c1c)';
+                fill.className = 'progress-fill';
+                pctLabel.className = 'text-lg font-mono font-extrabold text-red-400';
+            } else if (effectivePct >= 100) {
+                fill.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                fill.className = 'progress-fill progress-perfect';
+                pctLabel.className = 'text-lg font-mono font-extrabold text-emerald-400';
+                if (!hasTriggeredFireworks) { hasTriggeredFireworks = true; launchFireworks(); }
+            } else if (effectivePct >= 80) {
+                fill.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+                fill.className = 'progress-fill progress-glow';
+                pctLabel.className = 'text-lg font-mono font-extrabold text-amber-400';
+                hasTriggeredFireworks = false;
+            } else {
+                fill.style.background = 'linear-gradient(90deg, #3b82f6, #6366f1)';
+                fill.className = 'progress-fill progress-glow';
+                pctLabel.className = 'text-lg font-mono font-extrabold text-slate-400';
+                hasTriggeredFireworks = false;
+            }
+
+            // Overload visuals
+            if(overweight) {
                 document.getElementById('bagVisual').classList.add('overload-border', 'bag-overload-shake');
                 document.getElementById('weightBox').classList.add('border-red-900', 'bg-red-950/20');
-                commitBtn.classList.add('btn-overload');
-                commitBtn.innerText = i18n[currentLang].overloaded;
-                commitBtn.disabled = true;
             } else {
                 document.getElementById('bagVisual').classList.remove('overload-border', 'bag-overload-shake');
                 document.getElementById('weightBox').classList.remove('border-red-900', 'bg-red-950/20');
-                commitBtn.classList.remove('btn-overload');
-                commitBtn.disabled = isLocked;
-                commitBtn.innerText = i18n[currentLang].confirm_selection;
             }
         }
 
@@ -561,7 +637,7 @@
             userIndices.clear();
             bodies.forEach(b => { Matter.Composite.remove(engine.world, b.body); b.el.remove(); });
             bodies.clear();
-            isLocked = false;
+            hasTriggeredFireworks = false;
             updateUI();
         }
 
@@ -580,14 +656,96 @@
             shuffleValues(); closeConfigModal();
         }
 
-        function compareWithAI() {
-            let uV = 0; userIndices.forEach(i => uV += items[i].v);
-            document.getElementById('resUserV').innerText = uV; document.getElementById('resAiV').innerText = currentOptimalValue;
-            document.getElementById('resMsg').innerText = uV >= currentOptimalValue ? "Perfect strategy!" : "Good, but not optimal.";
-            document.getElementById('resultModal').classList.remove('hidden'); document.getElementById('resultModal').classList.add('flex');
+        const verdicts = {
+            en: {
+                perfect: [
+                    "Flawless. You found the global optimum.",
+                    "Textbook perfect. Dynamic Programming would be proud.",
+                    "100% optimal. You have The Knack.",
+                    "Nothing wasted, nothing missed. Perfect strategy.",
+                    "You just out-computed the brute force. Respect."
+                ],
+                great: [
+                    "So close! You're within a hair of the optimum.",
+                    "Nearly perfect. One small tweak would nail it.",
+                    "Impressive eye. You almost matched the DP solution.",
+                    "A strong pick. Just a tiny gap from perfection."
+                ],
+                good: [
+                    "Solid effort, but there's room to optimize.",
+                    "Good instinct! The optimal hides a surprise though.",
+                    "Not bad. Try thinking about value-per-kg ratios.",
+                    "A decent haul, but the math says more was possible."
+                ],
+                low: [
+                    "The bag has more potential. Try a different combo.",
+                    "Greedy picks can be deceiving. Think DP!",
+                    "Heavy doesn't always mean valuable. Rethink the mix.",
+                    "There's treasure left on the table. Keep experimenting."
+                ],
+                empty: [
+                    "The bag is empty. Fortune favors the bold!",
+                    "Nothing ventured, nothing gained. Pick some items!"
+                ]
+            },
+            tr: {
+                perfect: [
+                    "Kusursuz. Global optimumu buldun.",
+                    "Ders kitabı gibi. Dinamik Programlama gurur duyardı.",
+                    "Yüzde yüz optimal. Sende o beceri var.",
+                    "Hiçbir şey boşa gitmedi. Mükemmel strateji.",
+                    "Brute force'u geçtin. Saygılar."
+                ],
+                great: [
+                    "Çok yakın! Optimumun bir tık altındasın.",
+                    "Neredeyse mükemmel. Küçük bir değişiklik yeterli.",
+                    "Etkileyici. DP çözümüne çok yaklaştın.",
+                    "Güçlü seçim. Mükemmelliğe az kaldı."
+                ],
+                good: [
+                    "Sağlam deneme, ama optimize edilebilir.",
+                    "İyi sezgi! Ama optimal bir sürpriz saklıyor.",
+                    "Fena değil. Değer/kg oranlarını düşün.",
+                    "İyi bir toplam, ama matematik daha fazlasını söylüyor."
+                ],
+                low: [
+                    "Çantanın daha çok potansiyeli var. Farklı dene.",
+                    "Açgözlü seçimler yanıltıcı olabilir. DP düşün!",
+                    "Ağır her zaman değerli demek değil.",
+                    "Masada hazine kaldı. Denemeye devam et."
+                ],
+                empty: [
+                    "Çanta boş. Cesaret eden kazanır!",
+                    "Hiçbir şey seçmedin. Eşyaları dene!"
+                ]
+            }
+        };
+
+        function getVerdict(pct) {
+            const v = verdicts[currentLang];
+            let pool;
+            if (pct <= 0) pool = v.empty;
+            else if (pct >= 100) pool = v.perfect;
+            else if (pct >= 85) pool = v.great;
+            else if (pct >= 50) pool = v.good;
+            else pool = v.low;
+            return pool[Math.floor(Math.random() * pool.length)];
         }
 
-        function closeModal() { document.getElementById('resultModal').classList.add('hidden'); isLocked = false; updateUI(); }
+        function compareWithAI() {
+            let uV = 0; userIndices.forEach(i => uV += items[i].v);
+            const totalW = [...userIndices].reduce((s, i) => s + items[i].w, 0);
+            const overweight = totalW > capacity;
+            const pct = overweight ? 0 : (currentOptimalValue > 0 ? Math.round((uV / currentOptimalValue) * 100) : 0);
+
+            document.getElementById('resUserV').innerText = overweight ? '---' : uV;
+            document.getElementById('resAiV').innerText = currentOptimalValue;
+            document.getElementById('resMsg').innerText = getVerdict(pct);
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+
+        function closeModal() { document.getElementById('resultModal').classList.add('hidden'); }
 
         function switchTab(t) {
             const isGame = t === 'game';
@@ -611,6 +769,71 @@
 
         document.getElementById('inputCapRange').oninput = (e) => document.getElementById('inputCapVal').innerText = e.target.value;
         document.getElementById('inputCountRange').oninput = (e) => document.getElementById('inputCountVal').innerText = e.target.value;
+
+        // Fireworks
+        function launchFireworks() {
+            const canvas = document.getElementById('fireworkCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const particles = [];
+            const colors = ['#fbbf24','#3b82f6','#10b981','#ef4444','#a855f7','#f97316','#22d3ee','#f43f5e'];
+
+            function burst(x, y) {
+                const count = 40 + Math.floor(Math.random() * 30);
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 2 + Math.random() * 5;
+                    particles.push({
+                        x, y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 1,
+                        decay: 0.008 + Math.random() * 0.012,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        size: 2 + Math.random() * 3
+                    });
+                }
+            }
+
+            // Launch multiple bursts with staggered timing
+            const burstPoints = [
+                {x: canvas.width * 0.2, y: canvas.height * 0.3, delay: 0},
+                {x: canvas.width * 0.5, y: canvas.height * 0.2, delay: 200},
+                {x: canvas.width * 0.8, y: canvas.height * 0.3, delay: 400},
+                {x: canvas.width * 0.35, y: canvas.height * 0.5, delay: 600},
+                {x: canvas.width * 0.65, y: canvas.height * 0.4, delay: 800},
+            ];
+            burstPoints.forEach(bp => setTimeout(() => burst(bp.x, bp.y), bp.delay));
+
+            let animId;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.06; // gravity
+                    p.life -= p.decay;
+                    if (p.life <= 0) return;
+                    alive = true;
+                    ctx.globalAlpha = p.life;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Trail
+                    ctx.globalAlpha = p.life * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(p.x - p.vx, p.y - p.vy, p.size * p.life * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+                if (alive) { animId = requestAnimationFrame(animate); }
+                else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+            }
+            animate();
+        }
 
         window.onload = () => { initPhysics(); shuffleValues(); setLanguage('en'); };
     </script>
