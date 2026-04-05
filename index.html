@@ -107,24 +107,24 @@
         .dp-table th { background: rgba(15, 23, 42, 0.8); color: #64748b; font-weight: 600; }
         .dp-highlight { background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: bold; box-shadow: inset 0 0 0 1px #10b981; }
 
-        /* Tooltip Style */
-        .dp-table td:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
+        /* Tooltip Style - positioned via JS */
+        #dpTooltip {
+            position: fixed;
             background: #1e293b;
             color: #f1f5f9;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
             white-space: pre;
-            z-index: 100;
+            z-index: 9999;
             border: 1px solid #334155;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.6);
             pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
         }
+        #dpTooltip.visible { opacity: 1; }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -440,6 +440,7 @@
         </div>
     </div>
 
+    <div id="dpTooltip"></div>
     <canvas id="fireworkCanvas" class="firework-canvas"></canvas>
 
     <script>
@@ -1232,6 +1233,29 @@
             }
             animate();
         }
+
+        // Fixed-position DP table tooltips (escape overflow clipping)
+        const dpTooltip = document.getElementById('dpTooltip');
+        document.addEventListener('mouseover', (e) => {
+            const td = e.target.closest('td[data-tooltip]');
+            if (!td) return;
+            const tip = td.getAttribute('data-tooltip');
+            if (!tip) return;
+            dpTooltip.textContent = tip;
+            dpTooltip.classList.add('visible');
+            const rect = td.getBoundingClientRect();
+            let left = rect.left + rect.width / 2 - dpTooltip.offsetWidth / 2;
+            let top = rect.top - dpTooltip.offsetHeight - 8;
+            // Keep within viewport
+            if (left < 8) left = 8;
+            if (left + dpTooltip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - dpTooltip.offsetWidth - 8;
+            if (top < 8) top = rect.bottom + 8; // flip below if no room above
+            dpTooltip.style.left = left + 'px';
+            dpTooltip.style.top = top + 'px';
+        });
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('td[data-tooltip]')) dpTooltip.classList.remove('visible');
+        });
 
         window.onload = () => { initPhysics(); shuffleValues(); setLanguage('en'); };
     </script>
