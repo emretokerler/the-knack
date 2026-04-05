@@ -188,6 +188,24 @@
             box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
         }
 
+        /* Level HUD */
+        .level-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.15); transition: all 0.4s ease; }
+        .level-dot.current { border-color: #3b82f6; box-shadow: 0 0 8px rgba(59,130,246,0.5); }
+        .level-dot.star-3 { background: #10b981; border-color: #10b981; }
+        .level-dot.star-2 { background: #f59e0b; border-color: #f59e0b; }
+        .level-dot.star-1 { background: #64748b; border-color: #64748b; }
+        .level-dot.star-0 { background: #ef4444; border-color: #ef4444; }
+        .level-badge { transition: all 0.3s ease; }
+        .level-up-flash { animation: level-glow 0.8s ease; }
+        @keyframes level-glow {
+            0% { box-shadow: 0 0 0 rgba(59,130,246,0); }
+            50% { box-shadow: 0 0 30px rgba(59,130,246,0.6); }
+            100% { box-shadow: 0 0 0 rgba(59,130,246,0); }
+        }
+        .star-icon { display: inline-block; font-size: 20px; transition: all 0.3s; }
+        .star-filled { color: #fbbf24; filter: drop-shadow(0 0 4px rgba(251,191,36,0.5)); }
+        .star-empty { color: #334155; }
+
         /* Timer */
         .timer-urgent { animation: timer-pulse 0.5s ease infinite; }
         @keyframes timer-pulse {
@@ -298,6 +316,22 @@
                 </div>
 
                 <div class="lg:col-span-6 glass-panel p-8 flex flex-col items-center relative min-h-[500px]">
+                    <!-- Level HUD -->
+                    <div id="levelHud" class="w-full max-w-md mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div id="levelBadge" class="level-badge bg-blue-600/20 border border-blue-500/30 px-3 py-1 rounded-lg">
+                                    <span id="levelNum" class="text-sm font-mono font-extrabold text-blue-400">LVL 1</span>
+                                </div>
+                                <span id="levelName" class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Warm Up</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span id="streakCount" class="text-xs font-mono font-bold text-amber-400">0</span>
+                            </div>
+                        </div>
+                        <div id="levelDots" class="flex items-center justify-between gap-1"></div>
+                    </div>
                     <!-- Timer -->
                     <div id="timerDisplay" class="hidden mb-4">
                         <div class="flex items-center gap-3 bg-slate-900/80 px-6 py-3 rounded-2xl border border-slate-800">
@@ -388,8 +422,10 @@
 
     <div id="resultModal" class="fixed inset-0 bg-slate-950/90 hidden items-center justify-center z-[100] p-6 backdrop-blur-md">
         <div class="glass-panel p-10 max-w-xl w-full text-center border-slate-700">
-            <h2 class="text-xl font-bold text-blue-400 mb-8 uppercase tracking-[0.3em]">Verdict</h2>
-            <div class="grid grid-cols-2 gap-6 mb-8">
+            <h2 class="text-xl font-bold text-blue-400 mb-4 uppercase tracking-[0.3em]">Verdict</h2>
+            <!-- Stars -->
+            <div id="resStars" class="mb-6 flex justify-center gap-2"></div>
+            <div class="grid grid-cols-2 gap-6 mb-6">
                 <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800">
                     <p class="text-[10px] text-slate-500 uppercase mb-2">Your Score</p>
                     <p class="text-4xl font-mono font-bold">$<span id="resUserV">0</span></p>
@@ -399,8 +435,8 @@
                     <p class="text-4xl font-mono font-bold text-emerald-400">$<span id="resAiV">0</span></p>
                 </div>
             </div>
-            <p id="resMsg" class="mb-10 text-slate-300 italic"></p>
-            <button onclick="closeModal()" class="w-full bg-slate-800 py-4 rounded-xl font-bold uppercase tracking-widest">Close</button>
+            <p id="resMsg" class="mb-8 text-slate-300 italic"></p>
+            <div id="resButtons" class="flex gap-3"></div>
         </div>
     </div>
 
@@ -438,8 +474,24 @@
 
         let currentLang = 'en', capacity = 10, items = [], userIndices = new Set(), itemCount = 5;
         let engine, runner, bodies = new Map(), dpMatrix = [], currentOptimalValue = 0;
-        let difficulty = 'medium'; // easy, medium, hard
+        let difficulty = 'medium';
         let timerInterval = null, timerSeconds = 0, timerRunning = false;
+
+        // Level progression
+        const levels = [
+            { items:3, cap:8,  diff:'easy',   en:'Warm Up',         tr:'Isınma' },
+            { items:4, cap:9,  diff:'easy',   en:'Getting Started', tr:'Başlangıç' },
+            { items:4, cap:10, diff:'medium', en:'First Challenge',  tr:'İlk Meydan Okuma' },
+            { items:5, cap:10, diff:'medium', en:'Picking Up',       tr:'Hızlanıyor' },
+            { items:5, cap:12, diff:'medium', en:'Tricky Choices',   tr:'Zor Seçimler' },
+            { items:6, cap:12, diff:'hard',   en:'The Trap',         tr:'Tuzak' },
+            { items:6, cap:14, diff:'hard',   en:'Heavy Decisions',  tr:'Ağır Kararlar' },
+            { items:7, cap:14, diff:'hard',   en:'Expert Territory', tr:'Uzman Bölgesi' },
+            { items:7, cap:16, diff:'hard',   en:'Master Class',     tr:'Usta Sınıfı' },
+            { items:8, cap:18, diff:'hard',   en:'The Knack',        tr:'The Knack' },
+        ];
+        let currentLevel = 0, levelMode = true;
+        let sessionStars = [], streak = 0, bestStreak = 0;
 
         // ── Theme System ──
         const themes = {
@@ -569,7 +621,68 @@
             }
         };
 
+        function applyLevelParams() {
+            if (!levelMode) return;
+            const lvl = levels[Math.min(currentLevel, levels.length - 1)];
+            itemCount = lvl.items;
+            capacity = lvl.cap;
+            difficulty = lvl.diff;
+            document.getElementById('capDisplay').innerText = capacity;
+        }
+
+        function getStars(pct) {
+            if (pct >= 100) return 3;
+            if (pct >= 80) return 2;
+            if (pct >= 50) return 1;
+            return 0;
+        }
+
+        function renderStars(count, container) {
+            container.innerHTML = [0,1,2].map(i =>
+                `<span class="star-icon ${i < count ? 'star-filled' : 'star-empty'}">★</span>`
+            ).join('');
+        }
+
+        function updateLevelHud() {
+            const hud = document.getElementById('levelHud');
+            if (!levelMode) { hud.classList.add('hidden'); return; }
+            hud.classList.remove('hidden');
+
+            const lvlIdx = Math.min(currentLevel, levels.length - 1);
+            const lvl = levels[lvlIdx];
+            const isEndless = currentLevel >= levels.length;
+
+            document.getElementById('levelNum').innerText = isEndless ? `LVL ${currentLevel + 1}` : `LVL ${currentLevel + 1}`;
+            document.getElementById('levelName').innerText = isEndless
+                ? (currentLang === 'tr' ? 'Sonsuz Mod' : 'Endless')
+                : lvl[currentLang];
+            document.getElementById('streakCount').innerText = streak;
+
+            // Render dots
+            const dots = document.getElementById('levelDots');
+            dots.innerHTML = levels.map((_, i) => {
+                let cls = 'level-dot';
+                if (i === currentLevel) cls += ' current';
+                if (i < sessionStars.length) cls += ` star-${sessionStars[i]}`;
+                return `<div class="${cls}"></div>`;
+            }).join('');
+        }
+
+        function advanceLevel() {
+            currentLevel++;
+            applyLevelParams();
+            const badge = document.getElementById('levelBadge');
+            badge.classList.add('level-up-flash');
+            setTimeout(() => badge.classList.remove('level-up-flash'), 800);
+            shuffleValues();
+        }
+
+        function retryLevel() {
+            shuffleValues();
+        }
+
         function shuffleValues() {
+            if (levelMode) applyLevelParams();
             const preset = difficultyPresets[difficulty];
             const baseArchetypes = preset.archetypes;
 
@@ -615,7 +728,7 @@
 
             items.forEach(it => it.size = 25 + (it.w * 12));
             clearSelection(); calculateOptimal(); updateUI(); populateLab();
-            startTimer();
+            updateLevelHud(); startTimer();
         }
 
         // Simulate greedy: pick items by best value/weight ratio until full
@@ -848,6 +961,7 @@
         function closeConfigModal() { document.getElementById('configModal').classList.add('hidden'); document.getElementById('configModal').classList.remove('flex'); }
 
         function applyConfig() {
+            levelMode = false; // Custom settings = freeplay mode
             capacity = parseInt(document.getElementById('inputCapRange').value);
             itemCount = parseInt(document.getElementById('inputCountRange').value);
             timerSeconds = parseInt(document.getElementById('inputTimerRange').value);
@@ -979,14 +1093,48 @@
         }
 
         function compareWithAI() {
+            stopTimer();
             let uV = 0; userIndices.forEach(i => uV += items[i].v);
             const totalW = [...userIndices].reduce((s, i) => s + items[i].w, 0);
             const overweight = totalW > capacity;
             const pct = overweight ? 0 : (currentOptimalValue > 0 ? Math.round((uV / currentOptimalValue) * 100) : 0);
+            const stars = getStars(pct);
+
+            // Track stars in level mode
+            if (levelMode) {
+                sessionStars[currentLevel] = Math.max(sessionStars[currentLevel] || 0, stars);
+                if (stars === 3) { streak++; bestStreak = Math.max(bestStreak, streak); }
+                else { streak = 0; }
+                updateLevelHud();
+            }
 
             document.getElementById('resUserV').innerText = overweight ? '---' : uV;
             document.getElementById('resAiV').innerText = currentOptimalValue;
             document.getElementById('resMsg').innerText = getVerdict(pct);
+
+            // Stars display
+            renderStars(stars, document.getElementById('resStars'));
+
+            // Buttons
+            const btns = document.getElementById('resButtons');
+            if (levelMode) {
+                const isPerfect = pct >= 100;
+                const isLastLevel = currentLevel >= levels.length - 1;
+                const nextLabel = currentLang === 'tr' ? 'Sonraki Seviye' : 'Next Level';
+                const retryLabel = currentLang === 'tr' ? 'Tekrar Dene' : 'Retry';
+                const skipLabel = currentLang === 'tr' ? 'Atla' : 'Skip';
+                const endlessLabel = currentLang === 'tr' ? 'Devam Et' : 'Continue';
+
+                if (isPerfect) {
+                    btns.innerHTML = `<button onclick="closeModal(); advanceLevel()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-4 rounded-xl font-bold uppercase tracking-widest text-sm">${isLastLevel ? endlessLabel : nextLabel}</button>`;
+                } else {
+                    btns.innerHTML = `<button onclick="closeModal(); retryLevel()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold uppercase tracking-widest text-sm">${retryLabel}</button>` +
+                        `<button onclick="closeModal(); advanceLevel()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-xl font-bold uppercase tracking-widest text-xs text-slate-400">${skipLabel}</button>`;
+                }
+            } else {
+                btns.innerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold uppercase tracking-widest">Close</button>`;
+            }
+
             document.getElementById('resultModal').classList.remove('hidden');
             document.getElementById('resultModal').classList.add('flex');
         }
