@@ -326,9 +326,9 @@
                             <p class="text-5xl font-mono font-extrabold tracking-tighter"><span id="userWeight">0</span><span class="text-base text-slate-500 ml-1 font-normal">kg</span></p>
                             <div id="weightBar" class="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all w-0"></div>
                         </div>
-                        <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center">
-                            <p data-i18n="total_value" class="text-[11px] uppercase font-bold text-slate-500 tracking-[0.25em] mb-2">Total Value</p>
-                            <p class="text-5xl font-mono font-extrabold tracking-tighter text-yellow-500">$<span id="userValue">0</span></p>
+                        <div id="valueBox" class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center cursor-default transition-all">
+                            <p data-i18n="total_value" id="valueLabel" class="text-[11px] uppercase font-bold text-slate-500 tracking-[0.25em] mb-2">Total Value</p>
+                            <p id="valueDisplay" class="text-5xl font-mono font-extrabold tracking-tighter text-yellow-500">$<span id="userValue">0</span></p>
                         </div>
                     </div>
                 </div>
@@ -571,13 +571,22 @@
 
         function shuffleValues() {
             const preset = difficultyPresets[difficulty];
-            const archetypes = preset.archetypes;
+            const baseArchetypes = preset.archetypes;
+
+            // Scale weights up when few items, so total weight always exceeds capacity
+            // Target: average weight per item ≈ capacity * overflowMid / itemCount
+            const overflowMid = (preset.overflowMin + preset.overflowMax) / 2;
+            const targetAvgW = (capacity * overflowMid) / itemCount;
+            // Compute scale factor: how much to multiply base weights
+            const baseAvgW = baseArchetypes.reduce((s, a) => s + (a.wMin + a.wMax) / 2, 0) / baseArchetypes.length;
+            const wScale = Math.max(1, targetAvgW / baseAvgW);
 
             let attempts = 0;
             do {
                 items = Array.from({length: itemCount}, (_, i) => {
-                    const arch = archetypes[i % archetypes.length];
-                    const w = arch.wMin + Math.floor(Math.random() * (arch.wMax - arch.wMin + 1));
+                    const arch = baseArchetypes[i % baseArchetypes.length];
+                    const rawW = arch.wMin + Math.random() * (arch.wMax - arch.wMin);
+                    const w = Math.max(1, Math.round(rawW * wScale));
                     const v = arch.vMin + Math.floor(Math.random() * (arch.vMax - arch.vMin + 1));
                     return { ...getTypes()[i % getTypes().length], v, w };
                 });
@@ -586,19 +595,23 @@
                     const j = Math.floor(Math.random() * (i + 1));
                     [items[i], items[j]] = [items[j], items[i]];
                 }
+                // Ensure all items don't have the same weight (boring)
+                const uniqueW = new Set(items.map(it => it.w)).size;
+                if (uniqueW < 2) { attempts++; continue; }
+
                 const totalW = items.reduce((s, it) => s + it.w, 0);
                 if (totalW >= capacity * preset.overflowMin && totalW <= capacity * preset.overflowMax) {
                     // For hard: also verify greedy (best ratio first) != optimal
                     if (difficulty === 'hard') {
                         const greedyVal = getGreedyValue();
                         calculateOptimal();
-                        if (greedyVal < currentOptimalValue) break; // greedy fails = good puzzle
+                        if (greedyVal < currentOptimalValue) break;
                     } else {
                         break;
                     }
                 }
                 attempts++;
-            } while (attempts < 80);
+            } while (attempts < 100);
 
             items.forEach(it => it.size = 25 + (it.w * 12));
             clearSelection(); calculateOptimal(); updateUI(); populateLab();
@@ -754,7 +767,6 @@
             });
 
             document.getElementById('userWeight').innerText = totalW;
-            document.getElementById('userValue').innerText = totalV;
             document.getElementById('weightBar').style.width = Math.min((totalW/capacity)*100, 100) + '%';
 
             // Value progress bar
@@ -766,6 +778,23 @@
 
             fill.style.width = effectivePct + '%';
             pctLabel.innerText = (overweight ? '---' : effectivePct + '%');
+
+            // Value box: turn into GET button at 100%
+            const valueBox = document.getElementById('valueBox');
+            const valueLabel = document.getElementById('valueLabel');
+            const valueDisplay = document.getElementById('valueDisplay');
+
+            if (!overweight && effectivePct >= 100) {
+                valueBox.className = 'bg-emerald-600 hover:bg-emerald-500 p-6 rounded-2xl border border-emerald-400 text-center cursor-pointer transition-all shadow-lg shadow-emerald-500/20';
+                valueBox.onclick = () => compareWithAI();
+                valueLabel.innerText = '';
+                valueDisplay.innerHTML = '<span class="text-white tracking-[0.2em]">GET!</span>';
+            } else {
+                valueBox.className = 'bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center cursor-default transition-all';
+                valueBox.onclick = null;
+                valueLabel.innerText = i18n[currentLang].total_value;
+                valueDisplay.innerHTML = `$<span id="userValue">${totalV}</span>`;
+            }
 
             if (overweight) {
                 fill.style.background = 'linear-gradient(90deg, #ef4444, #b91c1c)';
