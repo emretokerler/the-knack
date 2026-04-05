@@ -6,6 +6,7 @@
     <title>0/1 Knapsack Problem - DP Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/poly-decomp@0.3.0/build/decomp.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Permanent+Marker&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -417,15 +418,59 @@
         };
 
         const types = [
-            {en:'Gold', tr:'Altın', i:lootIcons.gold, c:'bg-yellow-500/20'},
-            {en:'Diamond', tr:'Elmas', i:lootIcons.diamond, c:'bg-cyan-400/20'},
-            {en:'Artifact', tr:'Eser', i:lootIcons.artifact, c:'bg-orange-700/20'},
-            {en:'File', tr:'Dosya', i:lootIcons.file, c:'bg-blue-400/20'},
-            {en:'Painting', tr:'Tablo', i:lootIcons.painting, c:'bg-rose-600/20'},
-            {en:'Vase', tr:'Vazo', i:lootIcons.vase, c:'bg-violet-600/20'},
-            {en:'Crown', tr:'Taç', i:lootIcons.crown, c:'bg-amber-600/20'},
-            {en:'Skull', tr:'Kafatası', i:lootIcons.skull, c:'bg-slate-500/20'}
+            {en:'Gold', tr:'Altın', i:lootIcons.gold, c:'bg-yellow-500/20', shape:'gold'},
+            {en:'Diamond', tr:'Elmas', i:lootIcons.diamond, c:'bg-cyan-400/20', shape:'diamond'},
+            {en:'Artifact', tr:'Eser', i:lootIcons.artifact, c:'bg-orange-700/20', shape:'artifact'},
+            {en:'File', tr:'Dosya', i:lootIcons.file, c:'bg-blue-400/20', shape:'file'},
+            {en:'Painting', tr:'Tablo', i:lootIcons.painting, c:'bg-rose-600/20', shape:'painting'},
+            {en:'Vase', tr:'Vazo', i:lootIcons.vase, c:'bg-violet-600/20', shape:'vase'},
+            {en:'Crown', tr:'Taç', i:lootIcons.crown, c:'bg-amber-600/20', shape:'crown'},
+            {en:'Skull', tr:'Kafatası', i:lootIcons.skull, c:'bg-slate-500/20', shape:'skull'}
         ];
+
+        // Polygon collider vertices traced from each SVG icon (24x24 viewBox, centered at 12,12)
+        const colliderShapes = {
+            // Star - 10-point star from SVG path
+            gold: [
+                {x:0,y:-10},{x:3.09,y:-3.74},{x:10,y:-2.73},{x:5,y:2.14},
+                {x:6.18,y:9.02},{x:0,y:5.77},{x:-6.18,y:9.02},{x:-5,y:2.14},
+                {x:-10,y:-2.73},{x:-3.09,y:-3.74}
+            ],
+            // Gem - pentagon, flat top pointed bottom
+            diamond: [
+                {x:-6,y:-9},{x:6,y:-9},{x:10,y:-3},{x:0,y:9},{x:-10,y:-3}
+            ],
+            // Helmet/bell dome
+            artifact: [
+                {x:-8,y:5},{x:-8,y:-1},{x:-6,y:-5},{x:-3,y:-7},{x:0,y:-8},
+                {x:3,y:-7},{x:6,y:-5},{x:8,y:-1},{x:8,y:5}
+            ],
+            // Document with folded corner
+            file: [
+                {x:-6,y:-10},{x:1,y:-10},{x:7,y:-4},{x:7,y:10},{x:-6,y:10}
+            ],
+            // Square (painting)
+            painting: [
+                {x:-9,y:-9},{x:9,y:-9},{x:9,y:9},{x:-9,y:9}
+            ],
+            // Vase - wide top, narrow stem, wide base
+            vase: [
+                {x:-3,y:-10},{x:3,y:-10},{x:7,y:-6},{x:7,y:-2},
+                {x:4,y:2},{x:1,y:4},{x:1,y:10},{x:-1,y:10},
+                {x:-1,y:4},{x:-4,y:2},{x:-7,y:-2},{x:-7,y:-6}
+            ],
+            // Crown - zigzag top, flat bottom
+            crown: [
+                {x:-10,y:6},{x:-7,y:-5},{x:-3,y:-1},{x:0,y:-9},
+                {x:3,y:-1},{x:7,y:-5},{x:10,y:6}
+            ],
+            // Skull - rounded head + jaw
+            skull: [
+                {x:-3,y:9},{x:3,y:9},{x:3,y:4},{x:6,y:1},{x:7,y:-2},
+                {x:7,y:-5},{x:5,y:-8},{x:2,y:-9},{x:-2,y:-9},{x:-5,y:-8},
+                {x:-7,y:-5},{x:-7,y:-2},{x:-6,y:1},{x:-3,y:4}
+            ]
+        };
 
         function setLanguage(lang) {
             currentLang = lang;
@@ -529,6 +574,7 @@
         }
 
         function initPhysics() {
+            if (typeof decomp !== 'undefined') Matter.Common.setDecomp(decomp);
             engine = Matter.Engine.create(); engine.gravity.y = 1.8;
             Matter.Composite.add(engine.world, [
                 Matter.Bodies.rectangle(120, 215, 240, 40, {isStatic:true}),
@@ -537,6 +583,22 @@
             ]);
             runner = Matter.Runner.create(); Matter.Runner.run(runner, engine);
             renderPhysics();
+        }
+
+        function createItemBody(shapeKey, x, y, size) {
+            const baseVerts = colliderShapes[shapeKey];
+            if (!baseVerts) {
+                return Matter.Bodies.rectangle(x, y, size, size, { restitution: 0.3, friction: 0.2, chamfer: { radius: 6 } });
+            }
+            // Scale vertices from the base (designed for ~20px radius) to match item size
+            const scale = size / 22;
+            const verts = baseVerts.map(v => ({ x: v.x * scale, y: v.y * scale }));
+            const body = Matter.Bodies.fromVertices(x, y, [verts], {
+                restitution: 0.3, friction: 0.3, frictionAir: 0.01
+            });
+            // fromVertices can shift the body center; correct position
+            if (body) Matter.Body.setPosition(body, { x, y });
+            return body;
         }
 
         function renderPhysics() {
@@ -558,7 +620,7 @@
                 const el = document.createElement('div'); el.className = 'physics-item ' + it.c;
                 el.style.width = el.style.height = it.size + 'px'; el.innerHTML = it.i;
                 document.getElementById('bagVisual').appendChild(el);
-                const b = Matter.Bodies.rectangle(120, -30, it.size, it.size, { restitution: 0.3, friction: 0.2, chamfer: { radius: 10 } });
+                const b = createItemBody(it.shape, 120, -30, it.size);
                 Matter.Composite.add(engine.world, b);
                 bodies.set(i, {body: b, el, size: it.size});
             }
