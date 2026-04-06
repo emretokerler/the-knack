@@ -291,7 +291,7 @@
 
                     <div>
                         <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_greedy_title">Why not just be greedy?</h3>
-                        <p data-i18n="prob_greedy">A greedy approach (always pick the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy picks the first item ($60) and stops. But picking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.</p>
+                        <p data-i18n="prob_greedy">A greedy approach (always take the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy takes the first item ($60) and stops. But taking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.</p>
                     </div>
 
                     <div>
@@ -303,7 +303,7 @@
                             <p class="text-slate-300 ml-4">v<sub>i</sub> + M[i-1][w - w<sub>i</sub>]<span class="text-slate-500 ml-4">// take item i</span></p>
                             <p class="text-emerald-400">)</p>
                         </div>
-                        <p class="mt-3" data-i18n="prob_dp2">The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was picked.</p>
+                        <p class="mt-3" data-i18n="prob_dp2">The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was taken.</p>
                     </div>
 
                     <div>
@@ -513,7 +513,7 @@
                 backtrack_path: "Backtrack Path", available_items: "Items", reset_items: "Reset Selection",
                 total_weight: "Total Weight", total_value: "Total Value", optimality: "Optimality",
                 inventory_log: "Inventory Log", view_analysis: "See Optimum", config_title: "Settings",
-                overloaded: "OVERLOADED", picked: "Picked", skipped: "Skipped", row_empty: "Empty",
+                overloaded: "OVERLOADED", picked: "Taken", skipped: "Skipped", row_empty: "Empty",
                 time_up: "Time's up!", difficulty: "Difficulty",
                 diff_easy: "Easy", diff_medium: "Medium", diff_hard: "Hard",
                 prob_title: "The 0/1 Knapsack Problem",
@@ -524,15 +524,15 @@
                 prob_why_title: "Why does it matter?",
                 prob_why: "The knapsack problem appears everywhere: budget allocation, cargo loading, resource scheduling, portfolio optimization, and even cutting stock. It is NP-hard in general, meaning there is no known algorithm that solves all instances quickly. However, when the capacity W is an integer, Dynamic Programming solves it in O(nW) time -- pseudo-polynomial, but fast enough in practice.",
                 prob_greedy_title: "Why not just be greedy?",
-                prob_greedy: "A greedy approach (always pick the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy picks the first item ($60) and stops. But picking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.",
+                prob_greedy: "A greedy approach (always take the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy takes the first item ($60) and stops. But taking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.",
                 prob_dp_title: "The DP Solution",
                 prob_dp: "Dynamic Programming builds a table M[i][w] where each cell represents the best value achievable using the first i items with capacity w. For each item, we compare two choices:",
-                prob_dp2: "The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was picked.",
+                prob_dp2: "The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was taken.",
                 prob_complexity_title: "Complexity",
                 prob_cta: "Try it yourself",
                 tip_base: "Base case: Value is 0",
                 tip_skip: "Item too heavy: Take previous best value",
-                tip_compare: "Comparing options:\n1. Keep previous best: {prev}\n2. Pick this (+${val}): {calc}\nResult: Max of both"
+                tip_compare: "Comparing options:\n1. Keep previous best: {prev}\n2. Take this (+${val}): {calc}\nResult: Max of both"
             },
             tr: {
                 max_capacity: "Maks. Kapasite", nav_problem: "Problem", nav_solution: "Analiz", nav_game: "Oyunu Oyna",
@@ -573,7 +573,7 @@
             { items:3, cap:8,  diff:'easy',   en:'Warm Up',         tr:'Isınma' },
             { items:4, cap:9,  diff:'easy',   en:'Getting Started', tr:'Başlangıç' },
             { items:4, cap:10, diff:'medium', en:'First Challenge',  tr:'İlk Meydan Okuma' },
-            { items:5, cap:10, diff:'medium', en:'Picking Up',       tr:'Hızlanıyor' },
+            { items:5, cap:10, diff:'medium', en:'Stacking Up',       tr:'Hızlanıyor' },
             { items:5, cap:12, diff:'medium', en:'Tricky Choices',   tr:'Zor Seçimler' },
             { items:6, cap:12, diff:'hard',   en:'The Trap',         tr:'Tuzak' },
             { items:6, cap:14, diff:'hard',   en:'Heavy Decisions',  tr:'Ağır Kararlar' },
@@ -822,7 +822,7 @@
             updateLevelHud(); startTimer();
         }
 
-        // Simulate greedy: pick items by best value/weight ratio until full
+        // Simulate greedy: take items by best value/weight ratio until full
         function getGreedyValue() {
             const sorted = items.slice().sort((a, b) => (b.v / b.w) - (a.v / a.w));
             let w = 0, v = 0;
@@ -1120,7 +1120,7 @@
                     "So close! You're within a hair of the optimum.",
                     "Nearly perfect. One small tweak would nail it.",
                     "Impressive eye. You almost matched the DP solution.",
-                    "A strong pick. Just a tiny gap from perfection."
+                    "A strong take. Just a tiny gap from perfection."
                 ],
                 good: [
                     "Solid effort, but there's room to optimize.",
@@ -1130,13 +1130,13 @@
                 ],
                 low: [
                     "The bag has more potential. Try a different combo.",
-                    "Greedy picks can be deceiving. Think DP!",
+                    "Greedy takes can be deceiving. Think DP!",
                     "Heavy doesn't always mean valuable. Rethink the mix.",
                     "There's treasure left on the table. Keep experimenting."
                 ],
                 empty: [
                     "The bag is empty. Fortune favors the bold!",
-                    "Nothing ventured, nothing gained. Pick some items!"
+                    "Nothing ventured, nothing gained. Take some items!"
                 ]
             },
             tr: {
