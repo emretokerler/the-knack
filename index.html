@@ -132,9 +132,15 @@
             padding: 10px;
             text-align: center;
             position: relative;
+            transition: all 0.15s ease;
         }
+        .dp-table td { cursor: pointer; }
+        .dp-table td:hover { background: rgba(59, 130, 246, 0.12); color: #93c5fd; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.3); z-index: 1; }
         .dp-table th { background: rgba(15, 23, 42, 0.8); color: #64748b; font-weight: 600; }
+        .dp-table tr:hover th { color: #94a3b8; }
         .dp-highlight { background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: bold; box-shadow: inset 0 0 0 1px #10b981; }
+        .dp-highlight:hover { background: rgba(16, 185, 129, 0.3) !important; color: #6ee7b7 !important; box-shadow: inset 0 0 0 1px #10b981 !important; }
+        .dp-cross { background: rgba(59, 130, 246, 0.05); }
 
         /* Tooltip Style - positioned via JS */
         #dpTooltip {
@@ -423,7 +429,6 @@
                 <div class="lg:col-span-3 glass-panel p-6 overflow-hidden flex flex-col relative">
                     <div class="mb-6">
                         <h3 data-i18n="dp_table_title" class="text-sm font-bold text-white mb-1">Sub-problem Solutions (DP Table)</h3>
-                        <p data-i18n="dp_table_hint" class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Hover over cells to see the logic</p>
                     </div>
                     <div class="overflow-x-auto custom-scrollbar pt-4 pb-8">
                         <table id="dpTable" class="dp-table mono"></table>
@@ -1483,11 +1488,35 @@
             animate();
         }
 
-        // Fixed-position DP table tooltips (escape overflow clipping)
+        // Fixed-position DP table tooltips + row/column crosshair
         const dpTooltip = document.getElementById('dpTooltip');
+        let highlightedCells = [];
+
+        function clearCellHighlights() {
+            highlightedCells.forEach(c => c.classList.remove('dp-cross'));
+            highlightedCells = [];
+        }
+
         document.addEventListener('mouseover', (e) => {
             const td = e.target.closest('td[data-tooltip]');
             if (!td) return;
+
+            // Crosshair: highlight same row + same column
+            clearCellHighlights();
+            const tr = td.parentElement;
+            const table = td.closest('table');
+            const colIdx = [...tr.children].indexOf(td);
+            if (table) {
+                // Same row
+                [...tr.querySelectorAll('td, th')].forEach(c => { c.classList.add('dp-cross'); highlightedCells.push(c); });
+                // Same column
+                [...table.querySelectorAll('tr')].forEach(row => {
+                    const cell = row.children[colIdx];
+                    if (cell) { cell.classList.add('dp-cross'); highlightedCells.push(cell); }
+                });
+            }
+
+            // Tooltip
             const tip = td.getAttribute('data-tooltip');
             if (!tip) return;
             dpTooltip.textContent = tip;
@@ -1495,15 +1524,17 @@
             const rect = td.getBoundingClientRect();
             let left = rect.left + rect.width / 2 - dpTooltip.offsetWidth / 2;
             let top = rect.top - dpTooltip.offsetHeight - 8;
-            // Keep within viewport
             if (left < 8) left = 8;
             if (left + dpTooltip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - dpTooltip.offsetWidth - 8;
-            if (top < 8) top = rect.bottom + 8; // flip below if no room above
+            if (top < 8) top = rect.bottom + 8;
             dpTooltip.style.left = left + 'px';
             dpTooltip.style.top = top + 'px';
         });
         document.addEventListener('mouseout', (e) => {
-            if (e.target.closest('td[data-tooltip]')) dpTooltip.classList.remove('visible');
+            if (e.target.closest('td[data-tooltip]')) {
+                dpTooltip.classList.remove('visible');
+                clearCellHighlights();
+            }
         });
 
         window.onload = () => { initPhysics(); shuffleValues(); setLanguage('en'); };
