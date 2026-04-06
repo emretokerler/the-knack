@@ -68,6 +68,30 @@
             transition: transform 0.3s ease;
             transform-origin: bottom center;
         }
+        .sack-fill {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 0%;
+            transition: height 0.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease;
+            background: linear-gradient(180deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.25) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .sack-fill.warning { background: linear-gradient(180deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.3) 100%); }
+        .sack-fill.full { background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.3) 100%); }
+        .sack-fill.overload { background: linear-gradient(180deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.4) 100%); }
+        .sack-weight-label {
+            position: absolute;
+            bottom: 8px; left: 0; right: 0;
+            text-align: center;
+            pointer-events: none;
+            z-index: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            transition: color 0.3s ease;
+        }
 
         @keyframes subtle-shake {
             0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -406,7 +430,10 @@
                     </div>
                     <div id="bagContainer" class="relative w-full max-w-[240px] mt-4 mb-10">
                         <div class="w-1/2 h-4 bg-slate-600 rounded-t-xl mx-auto mb-[-4px] border-t border-x border-slate-500 shadow-inner opacity-20"></div>
-                        <div id="bagVisual" class="knapsack-visual w-full"></div>
+                        <div id="bagVisual" class="knapsack-visual w-full">
+                            <div id="sackFill" class="sack-fill"></div>
+                            <div id="sackWeightLabel" class="sack-weight-label text-slate-500">0 / 10 kg</div>
+                        </div>
                     </div>
                     <!-- Value progress bar -->
                     <div class="w-full max-w-md mb-6">
@@ -419,12 +446,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 w-full gap-6 max-w-md">
-                        <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center relative overflow-hidden" id="weightBox">
-                            <p data-i18n="total_weight" class="text-[11px] uppercase font-bold text-slate-500 tracking-[0.25em] mb-2">Total Weight</p>
-                            <p class="text-5xl font-mono font-extrabold tracking-tighter"><span id="userWeight">0</span><span class="text-base text-slate-500 ml-1 font-normal">kg</span></p>
-                            <div id="weightBar" class="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all w-0"></div>
-                        </div>
+                    <div class="w-full max-w-xs">
                         <div id="valueBox" class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center cursor-default transition-all">
                             <p data-i18n="total_value" id="valueLabel" class="text-[11px] uppercase font-bold text-slate-500 tracking-[0.25em] mb-2">Total Value</p>
                             <p id="valueDisplay" class="text-5xl font-mono font-extrabold tracking-tighter text-yellow-500">$<span id="userValue">0</span></p>
@@ -1005,8 +1027,26 @@
                 }
             });
 
-            animateNumber(document.getElementById('userWeight'), totalW, '', '', 300);
-            document.getElementById('weightBar').style.width = Math.min((totalW/capacity)*100, 100) + '%';
+            // Sack fill level
+            const fillPct = Math.min((totalW / capacity) * 100, 110);
+            const sackFill = document.getElementById('sackFill');
+            const sackLabel = document.getElementById('sackWeightLabel');
+            sackFill.style.height = Math.min(fillPct, 100) + '%';
+            sackLabel.innerText = totalW + ' / ' + capacity + ' kg';
+
+            sackFill.className = 'sack-fill';
+            if (totalW > capacity) {
+                sackFill.classList.add('overload');
+                sackLabel.style.color = '#f87171';
+            } else if (totalW >= capacity * 0.9) {
+                sackFill.classList.add('warning');
+                sackLabel.style.color = '#fbbf24';
+            } else if (totalW >= capacity * 0.7) {
+                sackFill.classList.add('full');
+                sackLabel.style.color = '#34d399';
+            } else {
+                sackLabel.style.color = '#94a3b8';
+            }
 
             // Value progress bar
             const pct = currentOptimalValue > 0 ? Math.min(Math.round((totalV / currentOptimalValue) * 100), 100) : 0;
@@ -1060,10 +1100,8 @@
             // Overload visuals
             if(overweight) {
                 document.getElementById('bagVisual').classList.add('overload-border', 'bag-overload-shake');
-                document.getElementById('weightBox').classList.add('border-red-900', 'bg-red-950/20');
             } else {
                 document.getElementById('bagVisual').classList.remove('overload-border', 'bag-overload-shake');
-                document.getElementById('weightBox').classList.remove('border-red-900', 'bg-red-950/20');
             }
         }
 
