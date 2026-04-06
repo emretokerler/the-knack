@@ -387,9 +387,12 @@
                                 </div>
                                 <span id="levelName" class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Warm Up</span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                <span id="streakCount" class="text-xs font-mono font-bold text-amber-400">0</span>
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    <span id="streakCount" class="text-xs font-mono font-bold text-amber-400">0</span>
+                                </div>
+                                <span id="sessionTotalDisplay" class="text-sm font-mono font-extrabold text-yellow-400">$0</span>
                             </div>
                         </div>
                         <div id="levelDots" class="flex items-center justify-between gap-1"></div>
@@ -569,6 +572,7 @@
         ];
         let currentLevel = 0, levelMode = true;
         let sessionStars = [], streak = 0, bestStreak = 0;
+        let sessionTotal = 0;
 
         // ── Theme System ──
         const themes = {
@@ -734,6 +738,8 @@
                 ? (currentLang === 'tr' ? 'Sonsuz Mod' : 'Endless')
                 : lvl[currentLang];
             document.getElementById('streakCount').innerText = streak;
+            document.getElementById('sessionTotalDisplay').innerText = '$' + sessionTotal;
+            document.getElementById('sessionTotalDisplay').dataset.animVal = sessionTotal;
 
             // Render dots
             const dots = document.getElementById('levelDots');
@@ -948,6 +954,36 @@
 
         let hasTriggeredFireworks = false;
 
+        // Animated number counting
+        const activeAnimations = new Map();
+        function animateNumber(el, target, prefix, suffix, duration) {
+            prefix = prefix || ''; suffix = suffix || '';
+            if (activeAnimations.has(el)) cancelAnimationFrame(activeAnimations.get(el));
+            const start = parseInt(el.dataset.animVal || '0') || 0;
+            if (start === target) { el.innerText = prefix + target + suffix; return; }
+            const startTime = performance.now();
+            const dur = duration || 400;
+            function tick(now) {
+                const t = Math.min((now - startTime) / dur, 1);
+                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                const val = Math.round(start + (target - start) * eased);
+                el.innerText = prefix + val + suffix;
+                el.dataset.animVal = val;
+                if (t < 1) activeAnimations.set(el, requestAnimationFrame(tick));
+                else { activeAnimations.delete(el); el.dataset.animVal = target; }
+            }
+            activeAnimations.set(el, requestAnimationFrame(tick));
+        }
+
+        function collectValue() {
+            // Called when GET is clicked at 100%
+            let uV = 0; userIndices.forEach(i => uV += items[i].v);
+            sessionTotal += uV;
+            animateNumber(document.getElementById('sessionTotalDisplay'), sessionTotal, '$', '', 600);
+            launchFireworks();
+            compareWithAI();
+        }
+
         function updateUI() {
             const grid = document.getElementById('lootGrid');
             const trace = document.getElementById('inventoryTrace');
@@ -969,7 +1005,7 @@
                 }
             });
 
-            document.getElementById('userWeight').innerText = totalW;
+            animateNumber(document.getElementById('userWeight'), totalW, '', '', 300);
             document.getElementById('weightBar').style.width = Math.min((totalW/capacity)*100, 100) + '%';
 
             // Value progress bar
@@ -989,14 +1025,16 @@
 
             if (!overweight && effectivePct >= 100) {
                 valueBox.className = 'bg-emerald-600 hover:bg-emerald-500 p-6 rounded-2xl border border-emerald-400 text-center cursor-pointer transition-all shadow-lg shadow-emerald-500/20';
-                valueBox.onclick = () => compareWithAI();
-                valueLabel.innerText = '';
-                valueDisplay.innerHTML = '<span class="text-white tracking-[0.2em]">GET!</span>';
+                valueBox.onclick = () => collectValue();
+                valueLabel.innerHTML = '<span class="text-emerald-200/70 text-[10px] uppercase tracking-[0.2em] font-bold">GET!</span>';
+                valueDisplay.innerHTML = `<span class="text-white text-3xl font-mono font-extrabold">$${totalV}</span>`;
             } else {
                 valueBox.className = 'bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center cursor-default transition-all';
                 valueBox.onclick = null;
                 valueLabel.innerText = i18n[currentLang].total_value;
-                valueDisplay.innerHTML = `$<span id="userValue">${totalV}</span>`;
+                const valEl = document.getElementById('userValue');
+                if (valEl) { animateNumber(valEl, totalV, '', '', 300); }
+                else { valueDisplay.innerHTML = `$<span id="userValue" data-anim-val="${totalV}">${totalV}</span>`; }
             }
 
             if (overweight) {
@@ -1007,7 +1045,6 @@
                 fill.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
                 fill.className = 'progress-fill progress-perfect';
                 pctLabel.className = 'text-lg font-mono font-extrabold text-emerald-400';
-                if (!hasTriggeredFireworks) { hasTriggeredFireworks = true; launchFireworks(); }
             } else if (effectivePct >= 80) {
                 fill.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
                 fill.className = 'progress-fill progress-glow';
