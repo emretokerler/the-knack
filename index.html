@@ -723,8 +723,14 @@
         function getTypes() { return getTheme().items; }
         function getColliders() { return getTheme().colliders; }
 
+        // Analytics
+        function track(event, params) {
+            if (typeof gtag === 'function') gtag('event', event, params || {});
+        }
+
         function setLanguage(lang) {
             currentLang = lang;
+            track('language_switch', { language: lang });
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.id === `lang-${lang}`));
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -821,6 +827,11 @@
             }).join('');
         }
 
+        function skipLevel() {
+            track('level_skip', { level: currentLevel + 1 });
+            advanceLevel();
+        }
+
         function advanceLevel() {
             currentLevel++;
             applyLevelParams();
@@ -831,6 +842,7 @@
         }
 
         function retryLevel() {
+            track('level_retry', { level: currentLevel + 1 });
             shuffleValues();
         }
 
@@ -882,6 +894,7 @@
             items.forEach(it => it.size = 25 + (it.w * 12));
             clearSelection(); calculateOptimal(); updateUI(); populateLab();
             updateLevelHud(); startTimer();
+            track('level_start', { level: currentLevel + 1, difficulty, items: itemCount, capacity });
         }
 
         // Simulate greedy: take items by best value/weight ratio until full
@@ -1072,6 +1085,9 @@
             document.body.appendChild(floater);
             setTimeout(() => floater.remove(), 1300);
 
+            // Analytics
+            track('level_complete', { level: currentLevel + 1, stars, value: uV, optimality_pct: pct });
+
             // Fireworks
             launchFireworks();
             stopTimer();
@@ -1227,7 +1243,8 @@
                 updateTimerDisplay(remaining);
                 if (remaining <= 0) {
                     stopTimer();
-                    compareWithAI(); // auto-show results
+                    track('timer_expired', { level: currentLevel + 1 });
+                    compareWithAI();
                 }
             }, 1000);
         }
@@ -1363,7 +1380,7 @@
                     btns.innerHTML = `<button onclick="closeModal(); advanceLevel()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-4 rounded-xl font-bold uppercase tracking-widest text-sm">${isLastLevel ? endlessLabel : nextLabel}</button>`;
                 } else {
                     btns.innerHTML = `<button onclick="closeModal(); retryLevel()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold uppercase tracking-widest text-sm">${retryLabel}</button>` +
-                        `<button onclick="closeModal(); advanceLevel()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-xl font-bold uppercase tracking-widest text-xs text-slate-400">${skipLabel}</button>`;
+                        `<button onclick="closeModal(); skipLevel()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-xl font-bold uppercase tracking-widest text-xs text-slate-400">${skipLabel}</button>`;
                 }
             } else {
                 btns.innerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold uppercase tracking-widest">Close</button>`;
@@ -1376,6 +1393,7 @@
         function closeModal() { document.getElementById('resultModal').classList.add('hidden'); }
 
         function switchTab(t) {
+            track('tab_switch', { tab: t });
             const tabs = ['problem', 'visualizer', 'game'];
             tabs.forEach(tab => {
                 document.getElementById(`tab-${tab}`).classList.toggle('hidden', tab !== t);
