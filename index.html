@@ -151,7 +151,7 @@
             border-radius: 8px;
             font-size: 11px;
             font-family: 'JetBrains Mono', monospace;
-            white-space: pre;
+            white-space: pre-wrap;
             z-index: 9999;
             border: 1px solid #334155;
             box-shadow: 0 10px 20px -5px rgba(0,0,0,0.6);
@@ -963,7 +963,7 @@
                                 .replace('{result}', result);
                         }
                     }
-                    tableHtml += `<td data-tooltip="${tip}" class="${(i===items.length && w===capacity) ? 'dp-highlight' : ''}">${val}</td>`;
+                    tableHtml += `<td data-tooltip="${tip}" data-i="${i}" data-w="${w}" class="${(i===items.length && w===capacity) ? 'dp-highlight' : ''}">${val}</td>`;
                 });
                 tableHtml += '</tr>';
             });
@@ -1519,7 +1519,25 @@
             // Tooltip
             const tip = td.getAttribute('data-tooltip');
             if (!tip) return;
-            dpTooltip.textContent = tip;
+            const ci = parseInt(td.getAttribute('data-i'));
+            const cw = parseInt(td.getAttribute('data-w'));
+            let itemsHtml = '';
+            if (ci > 0 && cw >= 0 && dpMatrix.length > 0) {
+                let bw = cw;
+                const decisions = [];
+                for (let r = ci; r >= 1; r--) {
+                    const taken = dpMatrix[r][bw] !== dpMatrix[r-1][bw];
+                    decisions.push({ item: items[r-1], taken });
+                    if (taken) bw -= items[r-1].w;
+                }
+                decisions.reverse();
+                itemsHtml = '<div style="border-top:1px solid #334155;margin-top:6px;padding-top:6px;display:flex;flex-direction:column;gap:3px">' + decisions.map(d => {
+                    const color = d.taken ? '#34d399' : '#64748b';
+                    const opacity = d.taken ? '1' : '0.45';
+                    return `<div style="display:flex;align-items:center;gap:6px;opacity:${opacity}"><div style="width:18px;height:18px;flex-shrink:0">${d.item.svg}</div><span style="color:${color};font-size:10px;white-space:nowrap">${d.item[currentLang]}</span><span style="color:${color};font-size:10px;margin-left:auto;white-space:nowrap">$${d.item.v} ${d.item.w}kg</span><span style="color:${color};font-weight:bold;font-size:10px">${d.taken ? '✓' : '✗'}</span></div>`;
+                }).join('') + '</div>';
+            }
+            dpTooltip.innerHTML = tip.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + itemsHtml;
             dpTooltip.classList.add('visible');
             const rect = td.getBoundingClientRect();
             let left = rect.left + rect.width / 2 - dpTooltip.offsetWidth / 2;
