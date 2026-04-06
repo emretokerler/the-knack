@@ -230,6 +230,57 @@
         .star-filled { color: #fbbf24; filter: drop-shadow(0 0 4px rgba(251,191,36,0.5)); }
         .star-empty { color: #334155; }
 
+        /* GET button AAA */
+        .get-btn {
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+            border: 2px solid #6ee7b7;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 60px rgba(16, 185, 129, 0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+            animation: get-breathe 2s ease-in-out infinite, get-shine 3s linear infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        .get-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5), 0 0 80px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        .get-btn:active { transform: scale(0.97); }
+        .get-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.1) 10%, transparent 20%);
+            animation: get-rotate 4s linear infinite;
+        }
+        @keyframes get-breathe {
+            0%, 100% { box-shadow: 0 0 20px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.1); }
+            50% { box-shadow: 0 0 30px rgba(16,185,129,0.5), 0 0 80px rgba(16,185,129,0.15); }
+        }
+        @keyframes get-shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes get-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .get-value-float {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 900;
+            font-size: 28px;
+            color: #fbbf24;
+            text-shadow: 0 2px 10px rgba(251,191,36,0.5);
+            pointer-events: none;
+            z-index: 300;
+            animation: float-up 1.2s ease-out forwards;
+        }
+        @keyframes float-up {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            60% { opacity: 1; transform: translateY(-60px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-120px) scale(0.8); }
+        }
+
         /* Timer */
         .timer-urgent { animation: timer-pulse 0.5s ease infinite; }
         @keyframes timer-pulse {
@@ -998,12 +1049,38 @@
         }
 
         function collectValue() {
-            // Called when GET is clicked at 100%
             let uV = 0; userIndices.forEach(i => uV += items[i].v);
+            const totalW = [...userIndices].reduce((s, i) => s + items[i].w, 0);
+            const overweight = totalW > capacity;
+            const pct = overweight ? 0 : (currentOptimalValue > 0 ? Math.round((uV / currentOptimalValue) * 100) : 0);
+            const stars = getStars(pct);
+
+            // Track stars
+            sessionStars[currentLevel] = Math.max(sessionStars[currentLevel] || 0, stars);
+            if (stars === 3) { streak++; bestStreak = Math.max(bestStreak, streak); }
+            else { streak = 0; }
+
+            // Add to session total
             sessionTotal += uV;
             animateNumber(document.getElementById('sessionTotalDisplay'), sessionTotal, '$', '', 600);
+
+            // Floating +$value animation from the button
+            const box = document.getElementById('valueBox');
+            const rect = box.getBoundingClientRect();
+            const floater = document.createElement('div');
+            floater.className = 'get-value-float';
+            floater.innerText = '+$' + uV;
+            floater.style.left = (rect.left + rect.width / 2 - 50) + 'px';
+            floater.style.top = (rect.top - 10) + 'px';
+            document.body.appendChild(floater);
+            setTimeout(() => floater.remove(), 1300);
+
+            // Fireworks
             launchFireworks();
-            compareWithAI();
+            stopTimer();
+
+            // Advance to next level after a brief moment
+            setTimeout(() => advanceLevel(), 1200);
         }
 
         function updateUI() {
@@ -1064,10 +1141,10 @@
             const valueDisplay = document.getElementById('valueDisplay');
 
             if (!overweight && effectivePct >= 100) {
-                valueBox.className = 'bg-emerald-600 hover:bg-emerald-500 p-6 rounded-2xl border border-emerald-400 text-center cursor-pointer transition-all shadow-lg shadow-emerald-500/20';
+                valueBox.className = 'get-btn p-6 rounded-2xl text-center cursor-pointer transition-all';
                 valueBox.onclick = () => collectValue();
-                valueLabel.innerHTML = '<span class="text-emerald-200/70 text-[10px] uppercase tracking-[0.2em] font-bold">GET!</span>';
-                valueDisplay.innerHTML = `<span class="text-white text-3xl font-mono font-extrabold">$${totalV}</span>`;
+                valueLabel.innerHTML = '';
+                valueDisplay.innerHTML = `<p class="text-emerald-100/80 text-[10px] uppercase tracking-[0.3em] font-black mb-1">COLLECT</p><p class="text-white text-4xl font-mono font-extrabold tracking-tight">$${totalV}</p>`;
             } else {
                 valueBox.className = 'bg-slate-900/80 p-6 rounded-2xl border border-slate-800 text-center cursor-default transition-all';
                 valueBox.onclick = null;
