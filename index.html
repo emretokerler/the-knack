@@ -291,7 +291,7 @@
 
                     <div>
                         <h3 class="text-base font-bold text-white mb-3" data-i18n="prob_greedy_title">Why not just be greedy?</h3>
-                        <p data-i18n="prob_greedy">A greedy approach (always take the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy takes the first item ($60) and stops. But taking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.</p>
+                        <p data-i18n="prob_greedy">A greedy approach (always take the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items A($6, 1kg), B($10, 2kg), C($12, 3kg), D($15, 5kg). Greedy ranks by ratio (A=6, B=5, C=4, D=3) and takes A+B+C = $28 at 6kg. But the optimal is B+C+D = $37 at 10kg. Greedy left $9 on the table because it favored lightweight items and missed the heavier combination that fills the bag perfectly.</p>
                     </div>
 
                     <div>
@@ -524,15 +524,15 @@
                 prob_why_title: "Why does it matter?",
                 prob_why: "The knapsack problem appears everywhere: budget allocation, cargo loading, resource scheduling, portfolio optimization, and even cutting stock. It is NP-hard in general, meaning there is no known algorithm that solves all instances quickly. However, when the capacity W is an integer, Dynamic Programming solves it in O(nW) time -- pseudo-polynomial, but fast enough in practice.",
                 prob_greedy_title: "Why not just be greedy?",
-                prob_greedy: "A greedy approach (always take the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items = [(value: 60, weight: 10), (value: 50, weight: 5), (value: 50, weight: 5)]. Greedy takes the first item ($60) and stops. But taking both smaller items yields $100 -- far better. The 0/1 constraint means you cannot split items, so greedy misses combinations.",
+                prob_greedy: "A greedy approach (always take the item with the best value-per-weight ratio) seems intuitive but fails. Consider: capacity = 10, items A($6, 1kg), B($10, 2kg), C($12, 3kg), D($15, 5kg). Greedy ranks by ratio (A=6, B=5, C=4, D=3) and takes A+B+C = $28 at 6kg. But the optimal is B+C+D = $37 at 10kg. Greedy left $9 on the table because it favored lightweight items and missed the heavier combination that fills the bag perfectly.",
                 prob_dp_title: "The DP Solution",
                 prob_dp: "Dynamic Programming builds a table M[i][w] where each cell represents the best value achievable using the first i items with capacity w. For each item, we compare two choices:",
                 prob_dp2: "The final answer is M[n][W]. To find which items were selected, we backtrack through the table: if M[i][w] differs from M[i-1][w], item i was taken.",
                 prob_complexity_title: "Complexity",
                 prob_cta: "Try it yourself",
-                tip_base: "Base case: Value is 0",
-                tip_skip: "Item too heavy: Take previous best value",
-                tip_compare: "Comparing options:\n1. Keep previous best: {prev}\n2. Take this (+${val}): {calc}\nResult: Max of both"
+                tip_base: "Row 0 or column 0: no items or no capacity.\nBase case → value is always 0.",
+                tip_skip: "This item weighs {itemW}kg but only {w}kg\ncapacity is available. It doesn't fit!\n→ Keep the best value without it: {prev}",
+                tip_compare: "Can we do better by taking {itemName}?\n\nOption A (skip): keep best so far = ${prev}\nOption B (take): ${val} + best with {remW}kg left = ${calc}\n\n→ M[{i}][{w}] = max(${prev}, ${calc}) = ${result}"
             },
             tr: {
                 max_capacity: "Maks. Kapasite", nav_problem: "Problem", nav_solution: "Analiz", nav_game: "Oyunu Oyna",
@@ -551,15 +551,15 @@
                 prob_why_title: "Neden önemli?",
                 prob_why: "Sırt çantası problemi her yerde karşımıza çıkar: bütçe tahsisi, kargo yükleme, kaynak planlaması, portföy optimizasyonu ve kesim stoku. Genel olarak NP-zordur, yani tüm örnekleri hızla çözen bilinen bir algoritma yoktur. Ancak kapasite W bir tam sayı olduğunda, Dinamik Programlama O(nW) sürede çözer -- sözde-polinom, ama pratikte yeterince hızlı.",
                 prob_greedy_title: "Neden açgözlü olmak yetmez?",
-                prob_greedy: "Açgözlü yaklaşım (her zaman en iyi değer/ağırlık oranına sahip eşyayı seç) sezgisel görünür ama başarısız olur. Örnek: kapasite = 10, eşyalar = [(değer: 60, ağırlık: 10), (değer: 50, ağırlık: 5), (değer: 50, ağırlık: 5)]. Açgözlü ilk eşyayı seçer (60$) ve durur. Ama iki küçük eşyayı seçmek 100$ verir -- çok daha iyi.",
+                prob_greedy: "Açgözlü yaklaşım (her zaman en iyi değer/ağırlık oranına sahip eşyayı al) sezgisel görünür ama başarısız olur. Örnek: kapasite = 10, eşyalar A($6, 1kg), B($10, 2kg), C($12, 3kg), D($15, 5kg). Açgözlü orana göre sıralar (A=6, B=5, C=4, D=3) ve A+B+C = $28, 6kg alır. Ama optimal B+C+D = $37, 10kg'dır. Açgözlü hafif eşyaları tercih ederek çantayı tam dolduran ağır kombinasyonu kaçırdı.",
                 prob_dp_title: "DP Çözümü",
                 prob_dp: "Dinamik Programlama, her hücrenin ilk i eşya ile w kapasitede elde edilebilecek en iyi değeri temsil ettiği M[i][w] tablosu oluşturur. Her eşya için iki seçeneği karşılaştırırız:",
                 prob_dp2: "Son cevap M[n][W]'dir. Hangi eşyaların seçildiğini bulmak için tabloyu geriye izleriz: M[i][w], M[i-1][w]'den farklıysa, i. eşya seçilmiştir.",
                 prob_complexity_title: "Karmaşıklık",
                 prob_cta: "Kendin dene",
-                tip_base: "Temel durum: Değer 0",
-                tip_skip: "Eşya çok ağır: Önceki en iyi değeri al",
-                tip_compare: "Seçenekleri karşılaştır:\n1. Önceki en iyiyi koru: {prev}\n2. Bunu al (+${val}): {calc}\nSonuç: İkisinden büyüğü"
+                tip_base: "Satır 0 veya sütun 0: eşya veya kapasite yok.\nTemel durum → değer her zaman 0.",
+                tip_skip: "Bu eşya {itemW}kg ama yalnızca {w}kg\nkapasite var. Sığmıyor!\n→ Onsuz en iyi değeri koru: {prev}",
+                tip_compare: "{itemName} alarak daha iyi yapabilir miyiz?\n\nSeçenek A (atla): şu ana kadarki en iyi = ${prev}\nSeçenek B (al): ${val} + {remW}kg ile en iyi = ${calc}\n\n→ M[{i}][{w}] = max(${prev}, ${calc}) = ${result}"
             }
         };
 
@@ -860,14 +860,24 @@
                     if (i === 0 || w === 0) tip = i18n[currentLang].tip_base;
                     else {
                         const item = items[i-1];
-                        if (item.w > w) tip = i18n[currentLang].tip_skip;
-                        else {
-                            const prev = dpMatrix[i-1][w];
+                        const prev = dpMatrix[i-1][w];
+                        if (item.w > w) {
+                            tip = i18n[currentLang].tip_skip
+                                .replace('{itemW}', item.w)
+                                .replace('{w}', w)
+                                .replace('{prev}', prev);
+                        } else {
                             const calc = item.v + dpMatrix[i-1][w-item.w];
+                            const result = Math.max(prev, calc);
+                            const remW = w - item.w;
                             tip = i18n[currentLang].tip_compare
-                                .replace('{prev}', prev)
-                                .replace('{val}', item.v)
-                                .replace('{calc}', calc);
+                                .replace('{itemName}', item[currentLang])
+                                .replace('{prev}', prev).replace('{prev}', prev)
+                                .replace('{val}', item.v).replace('{val}', item.v)
+                                .replace('{remW}', remW)
+                                .replace('{calc}', calc).replace('{calc}', calc)
+                                .replace('{i}', i).replace('{w}', w)
+                                .replace('{result}', result);
                         }
                     }
                     tableHtml += `<td data-tooltip="${tip}" class="${(i===items.length && w===capacity) ? 'dp-highlight' : ''}">${val}</td>`;
