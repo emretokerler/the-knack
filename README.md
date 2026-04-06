@@ -2,7 +2,7 @@
 
 An interactive web app for learning the **0/1 Knapsack Problem** through Dynamic Programming visualization and a physics-based packing game.
 
-**[Try it live](https://emretokerler.github.io/the-knack/)**
+**[Try it live](https://the-sack-game.web.app)** | [GitHub Pages](https://emretokerler.github.io/the-sack/)
 
 ## What is this?
 
