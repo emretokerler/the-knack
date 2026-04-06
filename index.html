@@ -531,8 +531,8 @@
                 prob_complexity_title: "Complexity",
                 prob_cta: "Try it yourself",
                 tip_base: "Row 0 or column 0: no items or no capacity.\nBase case → value is always 0.",
-                tip_skip: "This item weighs {itemW}kg but only {w}kg\ncapacity is available. It doesn't fit!\n→ Keep the best value without it: {prev}",
-                tip_compare: "Can we do better by taking {itemName}?\n\nOption A (skip): keep best so far = ${prev}\nOption B (take): ${val} + best with {remW}kg left = ${calc}\n\n→ M[{i}][{w}] = max(${prev}, ${calc}) = ${result}"
+                tip_skip: "This item weighs {itemW}kg but only {w}kg\ncapacity is available. It doesn't fit!\n→ Copy the cell above: M[{pi}][{w}] = {prev}",
+                tip_compare: "Can we do better by taking {itemName}?\n\nA) Skip: use cell above M[{pi}][{w}] = ${prev}\nB) Take: ${val} + M[{pi}][{remW}] = ${calc}\n\n→ M[{i}][{w}] = max(${prev}, ${calc}) = ${result}"
             },
             tr: {
                 max_capacity: "Kapasite (W)", nav_problem: "Problem", nav_solution: "Çözüm", nav_game: "Çantayı Doldur",
@@ -558,8 +558,8 @@
                 prob_complexity_title: "Karmaşıklık",
                 prob_cta: "Hadi dene!",
                 tip_base: "Satır 0 ya da sütun 0: eşya ya da kapasite yok.\nBaşlangıç durumu → değer her zaman 0.",
-                tip_skip: "Bu eşya {itemW}kg ama elimizde sadece {w}kg yer var.\nSığmıyor!\n→ Bu eşya olmadan en iyi değeri koruyoruz: {prev}",
-                tip_compare: "{itemName} alsak daha mı iyi olur?\n\nA) Alma: eldeki en iyi = ${prev}\nB) Al: ${val} + kalan {remW}kg ile en iyi = ${calc}\n\n→ M[{i}][{w}] = max(${prev}, ${calc}) = ${result}"
+                tip_skip: "Bu eşya {itemW}kg ama elimizde sadece {w}kg yer var.\nSığmıyor!\n→ Üstteki hücreyi kopyala: M[{pi}][{w}] = {prev}",
+                tip_compare: "{itemName} alsak daha mı iyi olur?\n\nA) Atla: üstteki hücre M[{pi}][{w}] = ${prev}\nB) Al: ${val} + M[{pi}][{remW}] = ${calc}\n\n→ M[{i}][{w}] = max(${prev}, ${calc}) = ${result}"
             }
         };
 
@@ -861,10 +861,12 @@
                     else {
                         const item = items[i-1];
                         const prev = dpMatrix[i-1][w];
+                        const pi = i - 1;
                         if (item.w > w) {
                             tip = i18n[currentLang].tip_skip
                                 .replace('{itemW}', item.w)
-                                .replace('{w}', w)
+                                .replace('{w}', w).replace('{w}', w)
+                                .replace('{pi}', pi)
                                 .replace('{prev}', prev);
                         } else {
                             const calc = item.v + dpMatrix[i-1][w-item.w];
@@ -872,9 +874,10 @@
                             const remW = w - item.w;
                             tip = i18n[currentLang].tip_compare
                                 .replace('{itemName}', item[currentLang])
+                                .replace('{pi}', pi).replace('{pi}', pi)
                                 .replace('{prev}', prev).replace('{prev}', prev)
                                 .replace('{val}', item.v).replace('{val}', item.v)
-                                .replace('{remW}', remW)
+                                .replace('{remW}', remW).replace('{remW}', remW)
                                 .replace('{calc}', calc).replace('{calc}', calc)
                                 .replace('{i}', i).replace('{w}', w)
                                 .replace('{result}', result);
